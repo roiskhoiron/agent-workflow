@@ -42,10 +42,36 @@ Keputusan parsial boleh. TC yang butuh device lebih dari yang tersedia = **Terta
 - Satu hal penting per kotak; nama file urut: `TC1-01.png`, `TC1-02.png`.
 
 ## Komentar Jira
-Baris pertama **selalu** link laporan Claude Docs. Lalu beberapa baris singkat:
+Ditulis seperti rekan satu tim yang sopan, bukan laporan mesin.
+
+**Gaya**
+- Orang pertama **aku**, hangat dan to the point. Hindari "Agen telah…", "Berikut hasil…", kata kaku, emoji berlebihan (paling banyak satu, mis. 🙏).
+- **Sapaan**: sapa orang yang dituju (reporter untuk validasi; reviewer/assignee untuk Ready To Review). Pakai sapaan yang sudah dipakai tim untuk orang itu di komentar tiket (mis. "Mas Dimas", "Mba Rina"). Belum ada contoh → **Kak <nama depan>**. Jangan menebak mas/mba dari nama.
+- Baris pertama **selalu** memuat link laporan Claude Docs, dibungkus kalimat sapaan.
+- Isi: apa yang aku cek, hasilnya, lalu apa yang perlu dari mereka (jika ada). Tutup dengan terima kasih atau tawaran bantu.
+- Kabar kurang enak (tidak layak, tertahan) disampaikan jujur tapi lembut, dengan alasan dan jalan keluar.
+- Tanpa kredensial; sebut nama kunci saja.
+
+**Contoh — validasi layak dengan catatan**
 ```
-Laporan: <link Claude Docs>
-Keputusan: Layak dengan catatan (AC2 tertahan: butuh device Android kedua)
+Halo Kak Rina, aku sudah cek tiket ini ya. Laporan lengkapnya di sini: <link Claude Docs>
+Hasilnya layak dikerjakan dengan satu catatan: AC2 belum bisa aku uji karena butuh HP Android kedua.
+Tiketnya aku geser ke In Progress. Kalau ada device cadangan, boleh kabari aku ya, nanti langsung aku lengkapi. Terima kasih 🙏
+```
+
+**Contoh — tidak layak**
+```
+Halo Mas Dimas, laporan pengecekanku ada di sini: <link Claude Docs>
+Untuk sementara tiketnya belum bisa aku lanjutkan: endpoint /v2/orders di staging masih 404, jadi AC1–AC3 belum bisa diuji.
+Tiket aku biarkan di Todo dulu. Begitu API-nya siap, cukup kabari aku dan aku cek ulang. Makasih ya!
+```
+
+**Contoh — Ready To Review**
+```
+Halo Kak Sari, perubahan untuk tiket ini sudah siap direview. Laporan ujinya: <link Claude Docs>
+Semua TC lulus di iPhone 13 Pro dan emulator Android.
 Build dev: <link Firebase> · PR: <link>
+Kalau ada yang kurang pas, tinggal komentar di PR, nanti aku perbaiki. Terima kasih sudah meluangkan waktu!
 ```
+
 Kirim lewat `mcp__claude_ai_Atlassian__addCommentToJiraIssue`.

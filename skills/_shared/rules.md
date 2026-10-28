@@ -88,4 +88,4 @@ jq '. + {"PROJ":{"allow":["21","31"],"names":{"21":"In Progress","31":"Ready To 
 Pemindahan tiket: `mcp__claude_ai_Atlassian__transitionJiraIssue` dengan id dari file itu.
 
 ## Gaya tulis (laporan, komentar Jira, pertanyaan)
-Bahasa Indonesia, singkat padat, ramah pemula; tabel dan diagram mermaid lebih dulu daripada paragraf. Komentar Jira: baris pertama = link laporan Claude Docs. Detail format: `report-format.md`. Kredensial tidak pernah ditulis ke Docs/Jira/MR.
+Bahasa Indonesia, singkat padat, ramah pemula; tabel dan diagram mermaid lebih dulu daripada paragraf. Komentar Jira: humanis, orang pertama "aku", sapaan ramah (Mas/Mba/Kak), baris pertama memuat link laporan Claude Docs. Detail format: `report-format.md`. Kredensial tidak pernah ditulis ke Docs/Jira/MR.

@@ -13,7 +13,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
    **Fitur**: cek requirement lengkap, API siap (spec di repo), desain tersedia.
 3. Semua file kerja (flow, hierarchy, screenshot) di `${TMPDIR:-/tmp}/validate/<KODE>/`, jangan di repo (kamu bisa berada di worktree primary). Aksi device lewat Maestro; screenshot tiap langkah; kotak merah dari `maestro hierarchy` + `annotate.py`.
 4. Tulis laporan validasi di Claude Docs sesuai `report-format.md`.
-5. Komentar Jira: baris pertama link laporan.
+5. Komentar Jira: baris pertama memuat link laporan; gaya humanis sesuai `report-format.md` (Komentar Jira).
 6. **Layak** / **Layak dengan catatan** → geser ke In Progress (id dari `~/.agent-workflow/jira-transitions.json`; belum ada → setup transisi di `rules.md`). **Tidak layak** → tetap Todo + komentar alasan.
 7. Lepas semua kunci device dan akun (`AGENT_LOCK_PID=$PPID` di panggilan yang sama, lihat `devices.md`).
 

@@ -13,7 +13,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
 3. Prod: berhenti dan tanya dulu.
 4. Rilis/hotfix: buat tiket `[release-request] …` / `[hotfix-release] …`, link manifest, tanya sebelum buat branch, cek `$AGENT_WORKFLOW_DIR/bin/manifest-check.sh` sebelum build.
 5. `git push origin <branch>`, lalu PR/MR (`gh` / `glab`) ke tujuan sesuai `build-release.md`.
-6. Komentar Jira (baris pertama link laporan, lalu link build + PR/MR), geser ke Ready To Review.
+6. Komentar Jira (baris pertama memuat link laporan, lalu link build + PR/MR; gaya humanis sesuai `report-format.md`), geser ke Ready To Review.
 
 ## Tidak boleh
 - Memindah tiket ke Done.
