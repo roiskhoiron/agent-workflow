@@ -26,4 +26,5 @@ assert_eq "1" "$(jq '[.hooks.PreToolUse[]|select(.hooks[0].command|test("guard.s
 c=$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$H2/.claude/settings.json")
 assert_eq 0 "$(echo '{"tool_name":"Read"}' | sh -c "$c" >/dev/null 2>&1; echo $?)" "space path: hook command runs via shell"
 assert_eq "yes" "$([ -d "$H/.agent-workflow/logs" ] && echo yes || echo no)" "logs dir created for launchd plist"
+assert_eq "1" "$(grep -c '^# Jira agent workflow' "$H/.claude/CLAUDE.md")" "global CLAUDE.md section appended once"
 exit $FAILS
