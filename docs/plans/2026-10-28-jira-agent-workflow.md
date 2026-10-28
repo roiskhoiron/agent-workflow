@@ -55,7 +55,7 @@ agent-workflow/
   skills/rilis-tiket/SKILL.md
   skills/_shared/{rules,report-format,devices,credentials,build-release}.md
   templates/qa.local.properties
-  config/jira-transitions.json    # id transisi yang boleh dipakai, per project Jira
+  (dipindah: ~/.agent-workflow/jira-transitions.json) # id transisi yang boleh dipakai, per project Jira
 ```
 
 ---
@@ -102,18 +102,18 @@ agent-workflow/
 
 **Files:**
 - Modify: `hooks/guard.sh`
-- Create: `config/jira-transitions.json` (`{}`), `tests/guard_scope_test.sh`
+- Create: `tests/guard_scope_test.sh`
 
 **Interfaces:**
 - Consumes: `guard.sh` dari Task 2.
-- Produces: `config/jira-transitions.json` format `{"PROJ": {"allow": ["21","31"], "names": {"21":"In Progress","31":"Ready To Review"}}}`; skill menulis file ini setelah user konfirmasi (lihat Task 7).
+- Produces (dipindah ke `~/.agent-workflow/jira-transitions.json` di Task 7): format `{"PROJ": {"allow": ["21","31"], "names": {"21":"In Progress","31":"Ready To Review"}}}`; skill menulis file ini setelah user konfirmasi (lihat Task 7).
 
 - [ ] **Step 1:** Tes:
   - `Edit` dengan `file_path` di repo main worktree → 2; di linked worktree (`git worktree add`) → 0; file di luar repo git → 0.
   - `Bash` `sed -i … file` / `> file` di main worktree → 0 (shortcut: hanya Edit/Write/MultiEdit yang dicek, upgrade bila agen ketahuan menulis lewat shell).
   - `transitionJiraIssue` `{"issueIdOrKey":"PROJ-5","transition":{"id":"21"}}` dengan config di atas → 0; id `41` → 2 dengan pesan menyebut "Done hanya dipindah kolega"; project tanpa entri → 2 dengan pesan "jalankan setup transisi".
 - [ ] **Step 2:** Jalankan → FAIL.
-- [ ] **Step 3:** Implement: main worktree = `git -C <dir> rev-parse --git-dir` sama dengan `--git-common-dir` (absolut). Path config dibaca dari `${AGENT_WORKFLOW_DIR:-$HOME/agent-workflow}/config/jira-transitions.json`.
+- [ ] **Step 3:** Implement: main worktree = `git -C <dir> rev-parse --git-dir` sama dengan `--git-common-dir` (absolut). Path config dibaca dari `${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/jira-transitions.json` (di luar repo).
 - [ ] **Step 4:** Jalankan semua tes → PASS.
 - [ ] **Step 5:** Commit `feat: guard primary worktree edits and Jira transitions`
 
@@ -162,7 +162,7 @@ agent-workflow/
 
 **Interfaces:**
 - Produces: agen dengan frontmatter `name`, `description`, `model` (`opus`/`sonnet`/`haiku` sesuai Global Constraints), `tools` (Coder/QA tanpa tool Atlassian & Claude Docs). Isi tiap agen: kewajiban + "Tidak boleh" persis tabel Tim agen di spec, dan merujuk file `_shared` yang relevan.
-- Produces: `rules.md` — mode diawasi/otonom, daftar blokir & daftar "berhenti dan tanya", cara tanya: di Orca `orca orchestration gate-create`, selain itu tanya di chat; aturan "periksa dulu lalu tanya, catat jawaban di `CLAUDE.md` project"; setup transisi Jira (ambil `getTransitionsForJiraIssue`, tunjukkan nama → user pilih id untuk In Progress & Ready To Review → tulis `config/jira-transitions.json`).
+- Produces: `rules.md` — mode diawasi/otonom, daftar blokir & daftar "berhenti dan tanya", cara tanya: di Orca `orca orchestration gate-create`, selain itu tanya di chat; aturan "periksa dulu lalu tanya, catat jawaban di `CLAUDE.md` project"; setup transisi Jira (ambil `getTransitionsForJiraIssue`, tunjukkan nama → user pilih id untuk In Progress & Ready To Review → tulis `~/.agent-workflow/jira-transitions.json`).
 - Produces: `devices.md` (pakai `device-lock.sh`/`device-pick.sh`, maks 3 virtual, Maestro untuk aksi & `maestro hierarchy` untuk bounds), `credentials.md` (urutan cari, template, cek `.gitignore` dulu, data uji awalan kode tiket di dev/staging saja), `build-release.md` (build-number.sh, sumber nomor, `.dev` ID terpisah, upload Firebase/TestFlight via `xcodebuild -exportArchive` + upload, prod = gate), `report-format.md` (struktur laporan validasi & laporan uji, contoh laporan validasi yang sudah dipakai user, gaya kotak merah, komentar Jira link di baris pertama).
 
 - [ ] **Step 1:** Tes `agents_test.sh`: setiap `agents/*.md` punya frontmatter dengan `model` yang sesuai peta; coder & qa tidak memuat `mcp__claude_ai_Atlassian` di `tools`; setiap rujukan `_shared/*.md` di file agen/skill benar-benar ada.
