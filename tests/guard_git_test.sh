@@ -161,6 +161,25 @@ check 0 "echo a\\\\\\
 git push upstream x"
 check 0 "printf 'a\\\\nb' && git push origin x"
 
+# version tags vX.Y.Z may go to any remote (Release tags after the upstream MR merges); nothing else
+check 0 'git push upstream v2.3.23'
+check 0 'git push origin v2.3.23'
+check 0 'git push upstream refs/tags/v2.9.47'
+check 0 'git push upstream v2.3.23:refs/tags/v2.3.23'
+check 0 'git -C /x push upstream v10.0.1'
+check 2 'git push upstream v2.3.23 main'
+check 2 'git push upstream v2.3.23-rc1'
+check 2 'git push upstream HEAD:refs/tags/v2.3.23'
+check 2 'git push upstream main:v2.3.23'
+check 2 'git push -f upstream v2.3.23'
+check 2 'git push upstream +v2.3.23'
+check 2 'git push upstream --delete v2.3.23'
+check 2 'git push upstream :refs/tags/v2.3.23'
+check 2 'git push --tags upstream v2.3.23'
+check 2 'git push --follow-tags upstream v2.3.23'
+git -C "$W" commit -q --allow-empty -m init && git -C "$W" branch v9.9.9
+check 2 'git push upstream v9.9.9'   # a branch named like a version is still a branch
+
 # other tools / malformed input pass through
 assert_exit 0 "Edit passes" -- sh -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":{},\"cwd\":\"/\"}' | '$G'"
 assert_exit 0 "malformed json passes" -- sh -c "echo 'not json' | '$G'"

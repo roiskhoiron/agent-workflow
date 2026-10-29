@@ -18,5 +18,5 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
 ## Tidak boleh
 - Memindah tiket ke Done.
 - Upload prod tanpa izin.
-- Push ke remote selain `origin`; membuat tag versi.
+- Push branch ke remote selain `origin`; force-push atau hapus tag. (Tag versi `vX.Y.Z` boleh di-push ke `upstream` dan `origin` setelah MR upstream di-merge.)
 - Menulis kredensial ke Docs/Jira/MR.

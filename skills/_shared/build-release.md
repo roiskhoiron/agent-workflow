@@ -57,7 +57,7 @@ iOS ke TestFlight: `xcodebuild -exportArchive` dengan plist `method=app-store-co
   Exit 0 = cocok. Exit 1 = beda → berhenti, laporkan dua daftar. Exit 2 = salah pakai/ref tidak ada → perbaiki ref.
 - Dua fix hotfix bentrok → berhenti dan tanya.
 - Hotfix yang sudah di-build tidak ditambah; fix baru masuk versi berikutnya.
-- Satu PR/MR ke upstream per rilis/hotfix. Tag versi dibuat maintainer/CI.
+- Satu PR/MR ke upstream per rilis/hotfix. Setelah di-merge, Release membuat tag beranotasi `vX.Y.Z` di commit hasil merge dan push ke `upstream` serta `origin` (langkah 11 `/rilis-tiket`).
 
 Contoh:
 ```mermaid

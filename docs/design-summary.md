@@ -29,7 +29,7 @@ Model diubah di ~/.claude/agents/<peran>.md.
 
 ## Mode kerja dan pagar
 Diawasi (sesi biasa) vs Otonom (bypass permission). Pagar aktif di keduanya.
-Selalu diblokir (permissions.deny): push apa pun ke remote `upstream` (termasuk tag, hapus branch); force-push ke master/main/develop; rm -rf di luar project; pindah tiket ke Done.
+Selalu diblokir (permissions.deny): push ke remote `upstream` (branch, `--tags`, hapus), kecuali tag versi `vX.Y.Z` eksplisit tanpa force; force-push ke master/main/develop; rm -rf di luar project; pindah tiket ke Done.
 Selalu berhenti & bertanya: upload prod; sebelum buat branch rilis/hotfix; nomor build tidak jelas; kredensial tidak ditemukan; dua fix hotfix bentrok.
 
 ## /validate-tiket
@@ -50,7 +50,7 @@ Contoh: hotfix/v1.0.2 dari master; fix/PROJ-101 & fix/PROJ-105 masing2 MR ke hot
 - Cek isi build: kode tiket di commit == manifest, beda = berhenti.
 - Asal hotfix: master upstream / tag versi live, bukan develop.
 - Hotfix yang sudah di-build tidak ditambah; fix baru = versi berikutnya.
-- Tag versi dibuat maintainer/CI, bukan agen.
+- Tag versi dibuat Release setelah MR upstream di-merge, di-push ke upstream dan origin.
 Periksa dulu lalu tanya: bandingkan master, develop, versi live; lapor dengan saran; jawaban dicatat di CLAUDE.md project.
 
 ## Device, akun uji, nomor build

@@ -13,7 +13,7 @@ flowchart LR
   A -- Ya --> B[Branch rilis di downstream] --> M[MR per tiket + merge]
   M --> C{manifest-check}
   C -- exit 1 --> S[Stop & lapor]
-  C -- exit 0 --> D[Build beta] --> U[Satu MR ke upstream] --> J[Komentar Jira + ingatkan tag]
+  C -- exit 0 --> D[Build beta] --> U[Satu MR ke upstream] --> J[Komentar Jira] --> G[Tag vX.Y.Z setelah merge]
 ```
 
 ## Langkah
@@ -49,7 +49,7 @@ flowchart LR
    - GitLab: `glab mr create --repo <upstream-ns>/<repo> --head <fork-ns>/<repo> --source-branch <jenis>/vX.Y.Z --target-branch master --title "…"`
    Hanya satu MR per rilis; sudah ada → perbarui, jangan buat baru.
 10. **Komentar tiket rilis** (`addCommentToJiraIssue`): bila ada laporan Claude Docs, baris pertama = link-nya; lalu manifest (tabel KODE → MR), nomor + link build beta, link MR upstream, hasil `manifest-check`. Tanpa kredensial. Tidak memindah ke Done.
-11. **Ingatkan maintainer** membuat tag `vX.Y.Z` setelah MR upstream di-merge. Agen **tidak pernah** membuat tag atau push ke `upstream`.
+11. **Tag versi** setelah MR upstream di-merge. Cek dulu: MR berstatus merged, versi di file project pada commit merge = `X.Y.Z`, dan tag `vX.Y.Z` belum ada di kedua remote. Lalu `git fetch upstream`, `git tag -a vX.Y.Z <commit merge> -m "<Platform> X.Y.Z (build) — <KODE manifest> (rilis KODE-RILIS)"`, `git push upstream vX.Y.Z`, `git push origin vX.Y.Z`. Belum di-merge → cukup ingatkan. Tag yang sudah ada tidak pernah ditimpa/dihapus; branch tetap tidak pernah di-push ke `upstream`.
 12. **Ringkas:** pastikan kunci `build:heavy` dilepas; tabel `KODE | MR downstream | Status` + branch, build, MR upstream.
 
 ## Berhenti lebih awal / galat

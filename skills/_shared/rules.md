@@ -26,7 +26,7 @@ Management (SPV, Validator, Reviewer, Release) memutuskan dan berbicara ke luar:
 - **Otonom**: bypass permission. Pagar di bawah tetap aktif di kedua mode.
 
 ## Selalu diblokir (hook `guard.sh`)
-- `git push` ke remote selain `origin` (downstream/fork), termasuk tag dan hapus branch.
+- `git push` ke remote selain `origin` (downstream/fork), termasuk `--tags` dan hapus branch. Pengecualian: tag versi `vX.Y.Z` yang ditulis eksplisit (tanpa force/hapus) boleh ke `origin` dan `upstream`.
 - Force-push atau hapus `master`/`main`/`develop`.
 - `rm -r`/`rm -rf` di luar folder project.
 - Memindah tiket Jira ke status yang tidak ada di `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
@@ -71,8 +71,8 @@ Di isi tugas tiap worker, tulis: "Ikuti `~/.claude/agents/<peran>.md`" (mis. `co
 - Branch kerja: `feature/` `fix/` `hotfix/` `docs/` `chore/` + kode tiket (mis. `fix/PROJ-1234`), dibuat di downstream.
 - Branch rilis: `release/vX.Y.Z`, `hotfix/vX.Y.Z` (selalu tanya dulu).
 - Commit menyebut kode tiket (dibaca `manifest-check.sh`).
-- Tag versi dibuat maintainer/CI, bukan agen.
-- Push hanya oleh Release, hanya ke `origin`.
+- Tag versi `vX.Y.Z` (beranotasi) dibuat Release setelah MR upstream di-merge, di commit hasil merge, lalu di-push ke `upstream` dan `origin`. Tag tidak pernah di-force atau dihapus.
+- Push hanya oleh Release: branch hanya ke `origin`; tag versi ke `upstream` dan `origin`.
 
 ## Setup transisi Jira (sekali per project)
 Hook menolak transisi sebelum project punya daftar. Jika ditolak "belum punya daftar transisi":

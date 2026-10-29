@@ -3,6 +3,7 @@
 # One check_<tool> function per tool; unknown tools and unparseable input are allowed.
 PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 PROTECTED='main|master|develop'
+VTAG='v[0-9]+\.[0-9]+\.[0-9]+'
 
 block() { echo "DIBLOKIR oleh guard: $*" >&2; exit 2; }
 
@@ -22,6 +23,17 @@ expand_home() {
     '${HOME}/'*) echo "$HOME/${1#\$\{HOME\}/}";;
     *) echo "$1";;
   esac
+}
+
+# every ref is a version tag vX.Y.Z (name, refs/tags/name, or name:refs/tags/name) and not a local branch
+version_tags_only() { # dir ref...
+  local d=$1 r s; shift
+  for r; do
+    s=${r%%:*}; s=${s#refs/tags/}
+    case $r in *:*) [ "${r#*:}" = "refs/tags/$s" ] || return 1;; esac
+    echo "$s" | grep -Eqx "$VTAG" || return 1
+    case ${r%%:*} in refs/tags/*) ;; *) ! git -C "$d" show-ref -q --verify "refs/heads/$s" 2>/dev/null || return 1;; esac
+  done
 }
 
 # git [global opts] push ...   ($d = directory git runs in)
@@ -44,13 +56,14 @@ check_git() {
   fi
   [ "$1" = push ] || return 0
   shift
-  local remote='' repo='' destructive='' refs=() r dst br
+  local remote='' repo='' destructive='' bulk='' refs=() r dst br
   while [ $# -gt 0 ]; do
     case $1 in
       --repo=*) repo=${1#--repo=};;
       --repo) repo=$2; shift;;
       -o|--push-option|--receive-pack|--exec) shift;;
       --force*|--mirror|--delete) destructive=1;;
+      --tags|--follow-tags|--all|--branches) bulk=1;;
       --*) ;;
       -*[fd]*) destructive=1;;
       -*) ;;
@@ -59,6 +72,8 @@ check_git() {
     shift
   done
   [ -n "$remote" ] || remote=$repo  # positional remote wins over --repo
+  # Release pushes version tags to origin and upstream; explicit refs only, never force/delete/bulk
+  [ -z "$destructive$bulk" ] && [ ${#refs[@]} -gt 0 ] && version_tags_only "$d" "${refs[@]}" && return 0
 
   br=$(git -C "$d" symbolic-ref --short -q HEAD 2>/dev/null)
   if [ -z "$remote" ]; then
