@@ -67,7 +67,7 @@ Orkestrasi (SPV sebagai coordinator), tiap worker = **panel split** di terminal 
 orca orchestration run-create --objective "..." --json
 orca orchestration task-create --run <run> --spec "..." --task-title "..." --json
 # per worker: split panel (arah selang-seling vertical/horizontal), model di --command
-orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction vertical --command "claude --model <id sesuai peran>" --json   # → handle panel
+orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction vertical --command "claude --model <id sesuai peran>" --json   # → handle panel = .result.split.handle
 orca terminal wait --terminal <handle panel> --for tui-idle --timeout-ms 60000 --json
 orca orchestration worker-start --task <id> --terminal <handle panel> --worktree current --run <run> --json
 orca orchestration worker-read ...
