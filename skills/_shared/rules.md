@@ -54,7 +54,7 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 
 **Kenali domain:** `$ORCA_WORKTREE_ID` = workspace terminal ini; cari di `orca worktree list --json` (`id` sama) → `displayName` = domain, `path`, `isMainWorktree`. Jangan pakai `orca worktree current` untuk ini: ia mencari dari folder, jadi di workspace folder hasilnya root project. Tidak ketemu → tanya user nama domainnya.
 - **Root project** (`isMainWorktree: true`, mis. "Brighton RE"): hanya audit, tanya, dan `/rilis-tiket`.
-- **Domain** = workspace yang dibuka user. **Semua agen batch bekerja di dalam domain itu saja**: satu sesi (yolo) atau panel terbelah di workspace yang sama (`worker-start --worktree current`, `orca terminal split`).
+- **Domain** = workspace yang dibuka user. **Semua agen batch bekerja di dalam domain itu saja**: satu sesi (yolo) atau panel terbelah di workspace yang sama (panel split, lihat Orkestrasi; jangan tab baru).
   - Domain git worktree (mis. BrightonChat "Manager"): kerja di checkout workspace itu.
   - Domain workspace folder (mis. Brighton RE "BAA"): kerja di folder worktree domain yang sudah ada, `<path>/<repo>-<slug>` (slug = `displayName` huruf kecil, spasi → `-`; mis. `brighton-android-baa`, `brighton-ios-baa`). Belum ada → berhenti, minta user membuatnya.
   - Tiket = branch `feature/|fix/|...<KODE>` di checkout domain, dikerjakan **bergantian** (satu branch aktif per checkout). Beberapa coder di satu tiket hanya bila file/modulnya terpisah.
@@ -62,13 +62,17 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 - **Kunci checkout:** sebelum mengubah branch/file, `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" acquire checkout:<path checkout> <domain>`; dipegang domain lain → cadangan C. Lepas saat selesai/berhenti.
 - **Dilarang (juga guard):** membuat workspace, worktree, atau project Orca baru dari `/develop-tiket` dan `/validate-tiket` (`orca worktree create`, `orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`), `git worktree add`, worktree di folder sementara. Satu-satunya pengecualian: `/rilis-tiket` membuat anak rilis dengan `orca worktree create --parent-worktree current`.
 
-Orkestrasi (SPV sebagai coordinator), semua worker di workspace domain:
+Orkestrasi (SPV sebagai coordinator), tiap worker = **panel split** di terminal SPV, bukan tab baru. `worker-start --agent` selalu membuka tab sesuai setelan Orca, jadi jangan dipakai untuk worker; buat panelnya dulu, lalu serahkan ke `worker-start --terminal`:
 ```
-orca orchestration run-create ...
-orca orchestration task-create ...
-orca orchestration worker-start --task <id> --worktree current --agent claude --model <id sesuai peran, lihat tabel>
+orca orchestration run-create --objective "..." --json
+orca orchestration task-create --run <run> --spec "..." --task-title "..." --json
+# per worker: split panel (arah selang-seling vertical/horizontal), model di --command
+orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction vertical --command "claude --model <id sesuai peran>" --json   # → handle panel
+orca terminal wait --terminal <handle panel> --for tui-idle --timeout-ms 60000 --json
+orca orchestration worker-start --task <id> --terminal <handle panel> --worktree current --run <run> --json
 orca orchestration worker-read ...
 ```
+Mode izin worker = mode sesi SPV (otonom → tambah `--permission-mode bypassPermissions` di `--command`). `--model` tidak boleh digabung dengan `--terminal`; model ditentukan di `--command`.
 Di isi tugas tiap worker, tulis: "Ikuti `~/.claude/agents/<peran>.md`" (mis. `coder.md`, `qa.md`).
 
 ## Git

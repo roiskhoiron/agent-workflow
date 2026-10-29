@@ -25,7 +25,7 @@ flowchart LR
 3. **Rencana + test case** di Claude Docs (`mcp__claude_ai_Claude_Docs__batch`): satu dokumen per batch, TC per AC per tiket. `--solo`/tiket kecil: catatan singkat cukup.
 4. **Pilih mode** (`--solo`/`--tim` memaksa; tanpa flag → SPV menilai: 1 tiket kecil = solo, selain itu tim). **Tidak ada workspace/worktree baru**: semua di checkout domain. Branch tiket `feature/|fix/|hotfix/|docs/|chore/<KODE>` dibuat dari `<base>` di checkout domain, dikerjakan bergantian (satu branch aktif); tiap tiket tetap MR sendiri.
    - **Solo:** SPV sendiri menjalankan peran Coder → Reviewer (review diff sendiri dengan daftar cek `reviewer.md`, catat di laporan bahwa review bukan independen) → QA → Release, berurutan, sesuai file perannya.
-   - **Tim:** `orca orchestration run-create --objective "develop <KODE...>" --json` → per tiket `task-create --run <run> --spec ... --task-title "<KODE> code"`, lalu worker sebagai panel di workspace domain, semua `--worktree current --agent claude --run <run> --json`:
+   - **Tim:** `orca orchestration run-create --objective "develop <KODE...>" --json` → per tiket `task-create --run <run> --spec ... --task-title "<KODE> code"`, lalu tiap worker sebagai **panel split** di terminal SPV (`terminal split --command "claude --model <model>"` → `worker-start --task <id> --terminal <handle panel> --worktree current --run <run> --json`, lengkapnya di `rules.md` → Orkestrasi; jangan `--agent`, itu membuka tab baru):
      | Peran | Model | Catatan |
      |---|---|---|
      | Coder | `claude-sonnet-5-5` | satu tiket/branch aktif; coder ke-2+ hanya bila file/modul terpisah, sebut batasnya di tugas |
