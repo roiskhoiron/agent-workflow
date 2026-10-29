@@ -50,7 +50,7 @@ Sebelum bertanya, kumpulkan fakta sendiri (git log, branch master/develop, versi
 
 ## Worktree (Orca)
 Cek posisi: `orca worktree current --json`.
-- `isMainWorktree: true` → **primary**: hanya audit dan tanya, tidak ada perubahan file. `/develop-tiket` dan `/rilis-tiket` berhenti di sini dan minta user membuka worktree domain.
+- `isMainWorktree: true` → **primary**: hanya audit dan tanya, tidak ada perubahan file. `/develop-tiket` berhenti di sini dan minta user membuka worktree domain. `/rilis-tiket` boleh jalan di sini (rilis lintas domain; kerja file di child worktree rilis).
 - **Domain**: branch gabungan batch, hanya lokal/downstream; satu build, satu distribusi, laporan per tiket.
 - **Child per tiket**: branch + PR/MR sendiri.
   `orca worktree create --name PROJ-1234 --parent-worktree current --base-branch <ref> --reference PROJ-1234`

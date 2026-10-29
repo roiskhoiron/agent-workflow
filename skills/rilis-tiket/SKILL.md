@@ -1,6 +1,6 @@
 ---
 name: rilis-tiket
-description: Jalankan rilis atau hotfix dari tiket Jira rilis (cek kondisi repo, branch release/hotfix di downstream, MR per tiket, cek manifest, build beta, satu MR ke upstream, komentar Jira). Dipanggil lewat `/rilis-tiket KODE-RILIS` atau `/rilis-tiket baru release|hotfix` dari worktree domain Orca. Use when asked to cut a release or hotfix from a Jira release ticket; kata kunci - rilis tiket, buat rilis, hotfix, release request.
+description: Jalankan rilis atau hotfix dari tiket Jira rilis (cek kondisi repo, branch release/hotfix di downstream, MR per tiket, cek manifest, build beta, satu MR ke upstream, komentar Jira). Dipanggil lewat `/rilis-tiket KODE-RILIS` atau `/rilis-tiket baru release|hotfix` dari worktree utama (primary) atau worktree domain Orca. Use when asked to cut a release or hotfix from a Jira release ticket; kata kunci - rilis tiket, buat rilis, hotfix, release request.
 argument-hint: KODE-RILIS | baru release|hotfix
 ---
 Jalankan satu rilis/hotfix (`$ARGUMENTS`). Sesi ini = **Release**: ikuti `~/.claude/agents/release.md`. Keputusan tingkat SPV (lanjut/berhenti, isi rilis) diserahkan ke user: di dalam run Orca lewat `orca orchestration gate-create --task <id> --question "<ringkasan + saran>" --options '["Ya","Tidak"]'`, di luar run lewat chat.
@@ -17,7 +17,7 @@ flowchart LR
 ```
 
 ## Langkah
-0. **Guard:** `orca worktree current --json`. Gagal atau `isMainWorktree: true` → berhenti: "Jalankan dari worktree domain". Prasyarat: Atlassian MCP terjangkau (`mcp__claude_ai_Atlassian__atlassianUserInfo`), `git remote -v` punya `origin` dan `upstream`.
+0. **Guard:** `orca worktree current --json` harus berhasil (repo dikelola Orca). Primary maupun worktree domain boleh: langkah 0–4 hanya baca + Jira, perubahan file hanya di child worktree rilis (langkah 5). Di primary jangan edit file atau checkout branch lain. Prasyarat: Atlassian MCP terjangkau (`mcp__claude_ai_Atlassian__atlassianUserInfo`), `git remote -v` punya `origin` dan `upstream`.
 1. **Tiket rilis:**
    - `baru release|hotfix` → tanya project, versi `vX.Y.Z`, dan daftar tiket fix/fitur. Buat tiket (`createJiraIssue`) berjudul `[release-request] vX.Y.Z …` / `[hotfix-release] vX.Y.Z …`, lalu link tiap tiket (`createIssueLink`). Catat KODE-RILIS.
    - `KODE-RILIS` → `getJiraIssue` + komentar. Judul harus diawali `[release-request]` (jenis **release**) atau `[hotfix-release]` (jenis **hotfix**); selain itu berhenti dan tanya.
