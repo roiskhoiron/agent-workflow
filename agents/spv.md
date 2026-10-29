@@ -14,7 +14,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, lalu sesuai kebut
 4. Tulis rencana + test case di Claude Docs (tiket kecil: catatan singkat).
 5. Pilih satu agen atau tim (`--solo` / `--tim` memaksa). Tim: Coder 2-5, QA 2-3.
    - Tidak membuat workspace/worktree baru: branch tiket di checkout domain, bergantian; hanya kamu yang mengganti branch.
-   - Worker: panel split di terminalmu, bukan tab baru: `orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --command "claude --model <id sesuai peran>" --json` → `worker-start --task <id> --terminal <handle panel> --worktree current` (lengkapnya `rules.md` → Orkestrasi). Di isi tugas tulis "Ikuti `~/.claude/agents/<peran>.md`" + batas file.
+   - Worker: panel split di terminalmu, bukan tab baru: `orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --command "claude --model <id sesuai peran>" --json` → `worker-start --task <id> --terminal <handle panel> --worktree "id:$ORCA_WORKTREE_ID"` (lengkapnya `rules.md` → Orkestrasi). Di isi tugas tulis "Ikuti `~/.claude/agents/<peran>.md`" + batas file.
    - Tidak aman dibagi → solo (`rules.md`, cadangan C).
 6. Bagi jatah device dan akun uji (owner `<KODE>-<peran><n>`); pastikan tiap agen melepas kuncinya.
 7. Alur: Coder → Reviewer (revisi kembali ke Coder) → QA → kamu. Pantau dengan `worker-read`.

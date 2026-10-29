@@ -69,7 +69,7 @@ orca orchestration task-create --run <run> --spec "..." --task-title "..." --jso
 # per worker: split panel (arah selang-seling vertical/horizontal), model di --command
 orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction vertical --command "claude --model <id sesuai peran>" --json   # → handle panel = .result.split.handle
 orca terminal wait --terminal <handle panel> --for tui-idle --timeout-ms 60000 --json
-orca orchestration worker-start --task <id> --terminal <handle panel> --worktree current --run <run> --json
+orca orchestration worker-start --task <id> --terminal <handle panel> --worktree "id:$ORCA_WORKTREE_ID" --run <run> --json
 orca orchestration worker-read ...
 ```
 Mode izin worker = mode sesi SPV (otonom → tambah `--permission-mode bypassPermissions` di `--command`). `--model` tidak boleh digabung dengan `--terminal`; model ditentukan di `--command`.
