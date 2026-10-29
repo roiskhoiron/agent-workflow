@@ -36,7 +36,7 @@ flowchart LR
 5. **Buat branch di downstream** (tidak pernah di upstream):
    - release: base `upstream/develop` (atau sesuai `CLAUDE.md`).
    - hotfix: base `<ref live>` (`upstream/master` atau tag live), **tidak pernah** `develop`.
-   - `git push origin <base>^{commit}:refs/heads/<jenis>/vX.Y.Z` (`^{commit}` perlu untuk tag beranotasi), lalu child worktree: `orca worktree create --name <jenis>-vX.Y.Z --base-branch origin/<jenis>/vX.Y.Z --reference KODE-RILIS`.
+   - `git push origin <base>^{commit}:refs/heads/<jenis>/vX.Y.Z` (`^{commit}` perlu untuk tag beranotasi), lalu child worktree: `orca worktree create --name <jenis>-vX.Y.Z --parent-worktree current --base-branch origin/<jenis>/vX.Y.Z --reference KODE-RILIS`.
 6. **MR per tiket ke branch itu di downstream** (kecuali yang sudah termasuk di langkah 3; `git remote get-url origin` → GitHub/GitLab):
    - GitHub: `gh pr create --repo <fork-owner>/<repo> --base <jenis>/vX.Y.Z --head <branch tiket> --title "<KODE> …"`
    - GitLab: `glab mr create --repo <fork-ns>/<repo> --source-branch <branch tiket> --target-branch <jenis>/vX.Y.Z --title "<KODE> …"`

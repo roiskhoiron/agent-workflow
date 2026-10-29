@@ -50,6 +50,7 @@ check_git() {
     esac
   done
   GSUB_OFF=$((n - $#))
+  [ "$1" = worktree ] && [ "${2:-}" = add ] && block "git worktree add dilarang: agen bekerja di workspace domain yang dibuka user (lihat rules.md, Workspace & worktree). Butuh folder baru → minta user."
   # unknown global option may have swallowed a value: if `push` appears anywhere, treat as push
   if [ "$1" != push ] && [ -n "$unk" ]; then
     while [ $# -gt 0 ] && [ "$1" != push ]; do shift; done
@@ -98,6 +99,20 @@ check_git() {
     if echo "$dst" | grep -Eqx "$PROTECTED"; then
       block "force-push/hapus branch terlindungi '$dst' dilarang. Push tanpa --force/+, atau ke branch fitur."
     fi
+  done
+}
+
+# orca: no new projects/repos or workspaces outside the user's domain (rules.md, Workspace & worktree)
+check_orca() {
+  local a
+  case "$1 ${2:-}" in
+    'repo add'|'project setup-'*) block "orca $1 $2 dilarang: agen tidak membuat project/repo Orca baru. Minta user.";;
+  esac
+  for a; do
+    case $a in
+      --no-parent|new-child|new-top-level|--worktree=new-child|--worktree=new-top-level)
+        block "orca $a dilarang: semua agen bekerja di workspace domain (worker-start --worktree current). Lihat rules.md.";;
+    esac
   done
 }
 
@@ -183,6 +198,7 @@ check_Bash() {
             case $t in *'$'*|-*) wd=/;; *) wd=$(join_path "$t" "$wd");; esac;;
           esac;;
         git) GSUB_OFF=-1; check_git "${w[@]:$((i+1))}"; gsub=$((i + 1 + GSUB_OFF));;
+        orca) check_orca "${w[@]:$((i+1))}";;
         rm) [ $i -eq $gsub ] || check_rm "${w[@]:$((i+1))}";;
       esac
       prev=${w[$i]}
@@ -206,7 +222,7 @@ check_edit() {
   gd=$(cd -P "$cd_" 2>/dev/null && pwd -P) || return 0
   pd=$(cd -P "$pd" 2>/dev/null && pwd -P) || return 0
   [ "$pd" = "$gd" ] || return 0
-  [ "$(git -C "$d" worktree list --porcelain 2>/dev/null | grep -c '^worktree ')" -gt 1 ] && block "edit file di worktree utama dilarang: $f. Kerjakan di linked worktree (git worktree add ../<nama> -b <branch>), lalu edit di sana."
+  [ "$(git -C "$d" worktree list --porcelain 2>/dev/null | grep -c '^worktree ')" -gt 1 ] && block "edit file di worktree utama dilarang: $f. Kerjakan di checkout workspace domain (lihat rules.md, Workspace & worktree)."
   return 0
 }
 

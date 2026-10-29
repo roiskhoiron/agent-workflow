@@ -186,4 +186,16 @@ assert_exit 0 "malformed json passes" -- sh -c "echo 'not json' | '$G'"
 printf '%s' "$(bash_json 'git push upstream main')" | "$G" >/dev/null 2>"$T/err"
 assert_eq "yes" "$(grep -q upstream "$T/err" && echo yes || echo no)" "block message on stderr"
 assert_exit 0 "jq present: unknown tool passes" -- sh -c "echo '{\"tool_name\":\"Write\"}' | '$G'"
+# workspace rules: no new worktrees/projects
+check 2 'git worktree add ../x -b feat/x'
+check 2 'git -C /x worktree add /tmp/y'
+check 0 'git worktree list'
+check 2 'orca repo add --path /x'
+check 2 'orca project setup-existing-folder --path /x'
+check 2 'orca orchestration worker-start --task t1 --worktree new-child --agent claude'
+check 2 'orca orchestration worker-start --task t1 --worktree=new-top-level --agent claude'
+check 2 'orca worktree create --name x --no-parent'
+check 0 'orca orchestration worker-start --task t1 --worktree current --agent claude'
+check 0 'orca worktree create --name release-v1.0.0 --parent-worktree current --base-branch origin/release/v1.0.0'
+check 0 'orca worktree list --json'
 exit $FAILS

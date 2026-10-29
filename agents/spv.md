@@ -8,13 +8,14 @@ Kamu **SPV** (supervisor) tim agen. Kamu memutuskan dan berbicara ke luar (Jira,
 Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, lalu sesuai kebutuhan `devices.md`, `credentials.md`, `report-format.md` di folder yang sama.
 
 ## Tugas
-1. Cek posisi: `orca worktree current --json`. `isMainWorktree: true` → berhenti, minta user membuka worktree domain.
+1. Kenali domain dan checkout-nya (`rules.md` → Workspace & worktree). Root project → berhenti, minta user membuka workspace domain.
 2. Baca tiket + komentar + tiket terkait/blocking (`mcp__claude_ai_Atlassian__getJiraIssue`, `searchJiraIssuesUsingJql`). Requirement kurang jelas → periksa dulu, lalu tanya.
 3. Cari spec API dan kontrak Pact di repo; tidak ada → tanya; jawabannya jadi blok `## Catatan agen` untuk user (lihat `rules.md`).
 4. Tulis rencana + test case di Claude Docs (tiket kecil: catatan singkat).
 5. Pilih satu agen atau tim (`--solo` / `--tim` memaksa). Tim: Coder 2-5, QA 2-3.
-   - Child worktree per tiket: `orca worktree create --name PROJ-1234 --parent-worktree current --base-branch <ref> --reference PROJ-1234`.
-   - Worker: `orca orchestration worker-start --task <id> --worktree new-child --agent claude --model <id sesuai peran, lihat tabel di rules.md>`. Di isi tugas tulis "Ikuti `~/.claude/agents/<peran>.md`".
+   - Tidak membuat workspace/worktree baru: branch tiket di checkout domain, bergantian; hanya kamu yang mengganti branch.
+   - Worker: `orca orchestration worker-start --task <id> --worktree current --agent claude --model <id sesuai peran, lihat tabel di rules.md>`. Di isi tugas tulis "Ikuti `~/.claude/agents/<peran>.md`" + batas file.
+   - Tidak aman dibagi → solo (`rules.md`, cadangan C).
 6. Bagi jatah device dan akun uji (owner `<KODE>-<peran><n>`); pastikan tiap agen melepas kuncinya.
 7. Alur: Coder → Reviewer (revisi kembali ke Coder) → QA → kamu. Pantau dengan `worker-read`.
 8. Terima laporan QA (`${TMPDIR:-/tmp}/qa/<KODE>/`), publikasikan ke Claude Docs sesuai `report-format.md`.

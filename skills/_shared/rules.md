@@ -31,6 +31,7 @@ Management (SPV, Validator, Reviewer, Release) memutuskan dan berbicara ke luar:
 - `rm -r`/`rm -rf` di luar folder project.
 - Memindah tiket Jira ke status yang tidak ada di `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit/Write file di worktree primary; berlaku untuk repo yang punya worktree tambahan (pola Orca).
+- Membuat workspace/worktree/project baru (`git worktree add`, `orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`).
 
 Jangan mencari jalan memutar. Jika diblokir, laporkan pesannya ke SPV/user.
 
@@ -48,21 +49,24 @@ Cara tanya:
 ## Periksa dulu, lalu tanya
 Sebelum bertanya, kumpulkan fakta sendiri (git log, branch master/develop, versi live, file project). Ajukan pertanyaan dengan ringkasan temuan dan **satu saran**. Baca dulu `## Catatan agen` di `CLAUDE.md` project. Agen tidak menulis `CLAUDE.md` sendiri (worktree primary diblokir guard): jawaban user + temuan diberikan sebagai blok `## Catatan agen` siap tempel, untuk di-commit user sendiri ke `CLAUDE.md` project supaya tidak ditanya ulang. Kredensial tidak pernah dicatat.
 
-## Worktree (Orca)
-Cek posisi: `orca worktree current --json`.
-- `isMainWorktree: true` → **primary**: hanya audit dan tanya, tidak ada perubahan file. `/develop-tiket` berhenti di sini dan minta user membuka worktree domain. `/rilis-tiket` boleh jalan di sini (rilis lintas domain; kerja file di child worktree rilis).
-- **Domain**: branch gabungan batch, hanya lokal/downstream; satu build, satu distribusi, laporan per tiket.
-- **Child per tiket**: branch + PR/MR sendiri.
-  `orca worktree create --name PROJ-1234 --parent-worktree current --base-branch <ref> --reference PROJ-1234`
-- **Child per coder**: hanya untuk tiket multi-coder.
+## Workspace & worktree (Orca)
+Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace folder (`<repo-id>::<path>::workspace:<uuid>`, path sama dengan folder project).
 
-Child dibuat dan dihapus lewat Orca, dibersihkan setelah MR di-merge.
+**Kenali domain:** `$ORCA_WORKTREE_ID` = workspace terminal ini; cari di `orca worktree list --json` (`id` sama) → `displayName` = domain, `path`, `isMainWorktree`. Jangan pakai `orca worktree current` untuk ini: ia mencari dari folder, jadi di workspace folder hasilnya root project. Tidak ketemu → tanya user nama domainnya.
+- **Root project** (`isMainWorktree: true`, mis. "Brighton RE"): hanya audit, tanya, dan `/rilis-tiket`.
+- **Domain** = workspace yang dibuka user. **Semua agen batch bekerja di dalam domain itu saja**: satu sesi (yolo) atau panel terbelah di workspace yang sama (`worker-start --worktree current`, `orca terminal split`).
+  - Domain git worktree (mis. BrightonChat "Manager"): kerja di checkout workspace itu.
+  - Domain workspace folder (mis. Brighton RE "BAA"): kerja di folder worktree domain yang sudah ada, `<path>/<repo>-<slug>` (slug = `displayName` huruf kecil, spasi → `-`; mis. `brighton-android-baa`, `brighton-ios-baa`). Belum ada → berhenti, minta user membuatnya.
+  - Tiket = branch `feature/|fix/|...<KODE>` di checkout domain, dikerjakan **bergantian** (satu branch aktif per checkout). Beberapa coder di satu tiket hanya bila file/modulnya terpisah.
+- **Cadangan (C):** tidak aman dibagi (coder menyentuh file yang sama, checkout dipakai domain lain, folder domain tidak ada) → satu agen (solo) saja, atau berhenti dan tanya.
+- **Kunci checkout:** sebelum mengubah branch/file, `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" acquire checkout:<path checkout> <domain>`; dipegang domain lain → cadangan C. Lepas saat selesai/berhenti.
+- **Dilarang (juga guard):** membuat workspace, worktree, atau project Orca baru dari `/develop-tiket` dan `/validate-tiket` (`orca worktree create`, `orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`), `git worktree add`, worktree di folder sementara. Satu-satunya pengecualian: `/rilis-tiket` membuat anak rilis dengan `orca worktree create --parent-worktree current`.
 
-Orkestrasi (SPV sebagai coordinator):
+Orkestrasi (SPV sebagai coordinator), semua worker di workspace domain:
 ```
 orca orchestration run-create ...
 orca orchestration task-create ...
-orca orchestration worker-start --task <id> --worktree new-child --agent claude --model <id sesuai peran, lihat tabel>
+orca orchestration worker-start --task <id> --worktree current --agent claude --model <id sesuai peran, lihat tabel>
 orca orchestration worker-read ...
 ```
 Di isi tugas tiap worker, tulis: "Ikuti `~/.claude/agents/<peran>.md`" (mis. `coder.md`, `qa.md`).

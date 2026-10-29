@@ -78,9 +78,9 @@ Terbuka: format judul versi rilis; peran Fable 5.1; API key ASC (opsional); izin
 - Pembersihan = skrip shell (tanpa Claude).
 - Spec API & kontrak Pact dicari di repo, tidak ada → tanya, catat di CLAUDE.md project.
 
-## Worktree Orca bertingkat
-Primary (audit/tanya saja, tidak ada perubahan file) → worktree domain (branch gabungan batch, lokal/downstream saja; 1 build, 1 distribusi, laporan per tiket) → child per tiket (branch + MR sendiri) → child per coder (hanya tiket multi-coder).
-- User memilih domain: `/develop-tiket` dijalankan dari dalam worktree domain; di primary → berhenti.
-- Nomor build dev batch = angka tiket pertama; semua tiket di catatan rilis Firebase.
-- Child worktree dibuat/dihapus lewat Orca, dibersihkan setelah MR di-merge.
-- Multi-agent via orkestrasi Orca (coordinator + worker).
+## Workspace Orca (A, cadangan C)
+- Root project (primary) → audit, tanya, `/rilis-tiket`.
+- Domain = workspace yang dibuka user; semua agen batch kerja di dalamnya (satu sesi atau panel terbelah), tanpa workspace/worktree/project baru.
+- Workspace folder (Brighton RE/Staff): checkout domain = folder `<repo>-<domain>` yang sudah ada.
+- Tiket = branch bergantian di checkout domain; MR per tiket. Nomor build dev batch = angka tiket pertama.
+- Tidak aman dibagi → solo (C). Guard memblokir pembuatan workspace/worktree/project.
