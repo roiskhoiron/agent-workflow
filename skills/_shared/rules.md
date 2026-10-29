@@ -68,12 +68,24 @@ orca orchestration run-create --objective "..." --json
 orca orchestration task-create --run <run> --spec "..." --task-title "..." --json
 # per worker: split panel (arah selang-seling vertical/horizontal), model di --command
 orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction vertical --command "claude --model <id sesuai peran>" --json   # → handle panel = .result.split.handle
+orca terminal set-pane-title --terminal <handle panel> --title "<Nama> (<Label><n>)" --json   # mis. "Paijo (QA1)"
 orca terminal wait --terminal <handle panel> --for tui-idle --timeout-ms 60000 --json
 orca orchestration worker-start --task <id> --terminal <handle panel> --worktree "id:$ORCA_WORKTREE_ID" --run <run> --json
 orca orchestration worker-read ...
 ```
 Mode izin worker = mode sesi SPV (otonom → tambah `--permission-mode bypassPermissions` di `--command`). `--model` tidak boleh digabung dengan `--terminal`; model ditentukan di `--command`.
 Di isi tugas tiap worker, tulis: "Ikuti `~/.claude/agents/<peran>.md`" (mis. `coder.md`, `qa.md`).
+
+**Nama agen** (judul panel, `--task-title`, dan sapaan di laporan/komentar): nama Jawa/Sunda tetap per peran dan urutan, format `<Nama> (<Label><n>)`. Satu nama satu agen dalam satu batch; sisa kunci tetap `<KODE>-<peran><n>`.
+| Peran | Label | Nama berurutan |
+|---|---|---|
+| SPV | SPV | Pak Darmo |
+| Validator | Validator | Kang Jajang |
+| Coder | Programmer | Maman, Ujang, Tarjo, Asep, Parmin |
+| Reviewer | Reviewer | Mbah Karto |
+| QA | QA | Paijo, Euis, Ningsih |
+| Release | Release | Sutini |
+Contoh: `Maman (Programmer1)`, `Ujang (Programmer2)`, `Paijo (QA1)`, `Euis (QA2)`.
 
 ## Git
 - Branch kerja: `feature/` `fix/` `hotfix/` `docs/` `chore/` + kode tiket (mis. `fix/PROJ-1234`), dibuat di downstream.
