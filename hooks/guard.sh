@@ -107,6 +107,8 @@ check_orca() {
   local a
   case "$1 ${2:-}" in
     'repo add'|'project setup-'*) block "orca $1 $2 dilarang: agen tidak membuat project/repo Orca baru. Minta user.";;
+    'terminal create'|'agent launch') block "orca $1 $2 dilarang: membuka tab baru. Pakai panel split: orca terminal split --terminal \"\$ORCA_TERMINAL_HANDLE\" (rules.md, Orkestrasi).";;
+    'orchestration worker-start') case " $* " in *' --agent '*|*' --agent='*) block "worker-start --agent dilarang: membuka tab baru. Split panel dulu, lalu worker-start --terminal <handle panel> (rules.md, Orkestrasi).";; esac;;
   esac
   for a; do
     case $a in

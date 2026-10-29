@@ -31,6 +31,7 @@ Management (SPV, Validator, Reviewer, Release) memutuskan dan berbicara ke luar:
 - `rm -r`/`rm -rf` di luar folder project.
 - Memindah tiket Jira ke status yang tidak ada di `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit/Write file di worktree primary; berlaku untuk repo yang punya worktree tambahan (pola Orca).
+- Membuka terminal/agen di **tab baru** (`orca terminal create`, `orca agent launch`, `worker-start --agent`): agen tambahan selalu panel split.
 - Membuat workspace/worktree/project baru (`git worktree add`, `orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`).
 
 Jangan mencari jalan memutar. Jika diblokir, laporkan pesannya ke SPV/user.
