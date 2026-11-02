@@ -41,6 +41,28 @@ Contoh di bawah memakai `W=${TMPDIR:-/tmp}/qa/PROJ-1234` (buat dengan `mkdir -p 
 - Simpan flow di `$W/flows/`, supaya bisa diulang.
 - Screenshot tiap langkah: `- takeScreenshot: <TC>-<langkah>` di flow.
 
+## Pilih alat Android: Maestro, Android CLI, adb
+Selalu pakai serial dari `device-pick.sh` (`--device <serial>`); jangan sentuh device lain.
+
+| Kebutuhan | Pertama | Jika terkendala |
+|---|---|---|
+| Tap/ketik/scroll untuk TC, reproduksi bug | Maestro flow | Android CLI → adb (lihat urutan di bawah) |
+| Hierarchy/bounds untuk kotak merah | `maestro hierarchy` | `android layout --device <serial> --full -o "$W/layout.json"` (bounds piksel) |
+| Screenshot | `takeScreenshot` di flow | `android screen capture --device <serial>` → `adb -s <serial> exec-out screencap -p` |
+| Pasang/jalankan APK | `android install` / `android run --device <serial>` | `adb -s <serial> install -r` lalu `adb shell am start` |
+| Log, shell, file, port forward | `adb -s <serial> logcat/shell/push/pull/reverse` | — |
+| Docs Android resmi | `android docs` | web |
+| Build (dev/beta/prod) | `./gradlew` sesuai `build-release.md` (flavor) | — (bukan `android build`) |
+| Boot/matikan emulator | `device-pick.sh` | `android emulator list/start/stop` hanya di luar workflow tiket |
+
+**Maestro terkendala** = driver gagal terpasang/start, flow timeout berulang, atau elemen tampil di layar tapi tidak ada di `maestro hierarchy` (umum di Compose tanpa `testTag`). Urutannya:
+1. Ulang sekali: `maestro --device <serial> test` lagi setelah app di-restart. Masih gagal → lanjut.
+2. **Android CLI:** `android layout` untuk cari elemen, `android input --device <serial> tap|text|scroll|key <selector>` untuk aksi, `android screen capture` untuk bukti.
+3. **adb:** `adb -s <serial> shell input tap|text|swipe`, `shell uiautomator dump`, `exec-out screencap -p`.
+4. Semua gagal → TC **Tertahan**, tulis alat yang dicoba + error-nya di laporan.
+
+Langkah 2–3 bukan flow yang bisa diulang otomatis: tulis perintah persisnya di `$W/manual-steps.sh` dan sebut di laporan bahwa langkah itu di luar Maestro.
+
 ## Kotak merah dari koordinat, bukan tebakan
 1. Saat layar yang mau ditandai tampil: `maestro --device <id> hierarchy > "$W/h.json"`.
 2. Ambil `bounds` elemen yang dimaksud (cari lewat `text`, `resource-id`, atau `accessibilityText`).
