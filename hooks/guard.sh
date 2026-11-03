@@ -110,7 +110,9 @@ check_git_audit() {
   local s=${1:-} a list='' skip=''
   shift
   case $s in
-    ''|show|log|grep|blame|diff|fetch|status|ls-files|ls-tree|rev-parse|rev-list|describe|cat-file|for-each-ref|show-ref|shortlog|reflog|name-rev|merge-base|help|version|--version|--help) return 0;;
+    ''|show|log|grep|blame|diff|status|ls-files|ls-tree|rev-parse|rev-list|describe|cat-file|for-each-ref|show-ref|shortlog|name-rev|merge-base|help|version|--version|--help) return 0;;
+    fetch) for a; do case $a in *:*) audit_block "git fetch $a (refspec menulis branch lokal)";; esac; done;;
+    reflog) case ${1:-} in expire|delete) audit_block "git reflog $1";; esac;;
     branch|tag)
       for a; do
         [ -n "$skip" ] && { skip=''; continue; }
@@ -123,7 +125,9 @@ check_git_audit() {
           *) [ -n "$list" ] || audit_block "git $s $a";;
         esac
       done;;
-    remote) case ${1:-} in ''|-v|--verbose|get-url|show) ;; *) audit_block "git remote $1";; esac;;
+    remote)
+      case ${1:-} in -v|--verbose) shift;; esac
+      case ${1:-} in ''|get-url|show) ;; *) audit_block "git remote $1";; esac;;
     config) for a; do case $a in --get|--get-all|--get-regexp|--list|-l) return 0;; esac; done; audit_block "git config";;
     worktree) [ "${1:-}" = list ] || audit_block "git worktree ${1:-}";;
     stash) case ${1:-} in list|show) ;; *) audit_block "git stash ${1:-}";; esac;;
@@ -132,19 +136,20 @@ check_git_audit() {
   return 0
 }
 
-# audit mode: gh/glab read-only (no PR/MR/issue/release writes, api GET without fields)
+# audit mode: gh/glab read-only: read verbs only (view/list/...), api GET without fields
 check_forge() {
   local a prev=''
   case ${1:-} in
-    pr|mr|issue) case ${2:-} in create|comment|merge|close|edit|review|approve|reopen|note|delete|lock|unlock|ready) audit_block "gh/glab $1 $2";; esac;;
-    release) case ${2:-} in create|delete|edit|upload) audit_block "gh/glab release $2";; esac;;
+    ''|search|status|help|version|--version|--help|-h) ;;
+    auth) [ "${2:-}" = status ] || audit_block "gh/glab auth ${2:-}";;
     api)
       for a; do
-        case $a in -f|-F|--field|--raw-field|--input|--field=*|--raw-field=*|--input=*) audit_block "gh/glab api $a";; esac
+        case $a in -f*|-F*|--field*|--raw-field*|--input*) audit_block "gh/glab api $a";; esac
         case $prev in -X|--method) [ "$a" = GET ] || audit_block "gh/glab api $prev $a";; esac
         case $a in --method=*) [ "${a#*=}" = GET ] || audit_block "gh/glab api $a";; -X?*) [ "${a#-X}" = GET ] || audit_block "gh/glab api $a";; esac
         prev=$a
       done;;
+    *) case ${2:-} in view|list|ls|status|diff|checks|show|watch|-h|--help) ;; *) audit_block "gh/glab $1 ${2:-}";; esac;;
   esac
   return 0
 }

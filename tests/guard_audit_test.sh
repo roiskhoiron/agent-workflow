@@ -42,6 +42,27 @@ check 0 'gh pr view 1'
 check 0 'gh api repos/a/b/pulls'
 check 2 'orca worktree create --name x'
 
+# review fixes: remote/fetch/reflog writes, gh/glab allowlist
+check 2 'git remote -v add evil https://x'
+check 2 'git remote --verbose remove origin'
+check 0 'git remote -v show origin'
+check 2 'git fetch . HEAD:refs/heads/newbr'
+check 2 'git fetch origin +x:main'
+check 2 'git reflog expire --expire=now --all'
+check 2 'git reflog delete HEAD@{0}'
+check 0 'git reflog -n 5'
+check 2 'gh api repos/o/r/issues -fbody=hi'
+check 2 'gh api repos/o/r/issues -Ftitle=hi'
+check 2 'gh issue develop 12'
+check 2 'gh repo delete o/r --yes'
+check 2 'gh workflow run ci.yml'
+check 2 'glab mr update 3 --title x'
+check 2 'gh secret set X'
+check 0 'gh run list'
+check 0 'glab mr view 3'
+check 0 'gh search issues foo'
+check 0 'gh auth status'
+
 # files: only the audit work folder
 tool_check 2 Write "$(jq -cn --arg p "$W/a.txt" '{file_path:$p}')"
 tool_check 0 Write '{"file_path":"/tmp/audit/s1/temuan.md"}'
