@@ -211,6 +211,7 @@ check 2 'orca terminal create --worktree active --command claude'
 check 2 'orca agent launch --agent claude'
 check 2 'orca orchestration worker-start --task t1 --worktree current --agent claude'
 check 2 'orca orchestration worker-start --task t1 --agent=claude'
-check 0 'orca terminal split --terminal term_1 --command claude'
+check 2 'orca terminal split --terminal term_1 --command claude'
+check 0 'bin/worker-pane.sh open "Maman (Programmer1)" claude'
 check 0 'orca orchestration worker-start --task t1 --terminal term_2 --worktree id:x --run r'
 exit $FAILS

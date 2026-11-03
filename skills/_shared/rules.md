@@ -32,6 +32,7 @@ Management (SPV, Validator, Reviewer, Release) memutuskan dan berbicara ke luar:
 - Memindah tiket Jira ke status yang tidak ada di `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit/Write file di worktree primary; berlaku untuk repo yang punya worktree tambahan (pola Orca).
 - Membuka terminal/agen di **tab baru** (`orca terminal create`, `orca agent launch`, `worker-start --agent`): agen tambahan selalu panel split.
+- `orca terminal split` langsung: panel worker hanya lewat `bin/worker-pane.sh` (pakai ulang panel bernama sama).
 - Membuat project/repo/workspace Orca baru (`orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`).
 - `git worktree add` di luar folder sejajar checkout; `git worktree remove` selain worktree tiket `<repo>-<nomor>` atau dengan `--force`; `git worktree move`.
 
@@ -70,13 +71,17 @@ Orkestrasi (SPV sebagai coordinator), tiap worker = **panel split** di terminal 
 ```
 orca orchestration run-create --objective "..." --json
 orca orchestration task-create --run <run> --spec "..." --task-title "..." --json
-# per worker: split panel (arah selang-seling vertical/horizontal), model di --command
-orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction vertical --command "claude --model <id sesuai peran>" --json   # → handle panel = .result.split.handle
-orca terminal set-pane-title --terminal <handle panel> --title "<Nama> (<Label><n>)" --json   # mis. "Paijo (QA1)"
-orca terminal wait --terminal <handle panel> --for tui-idle --timeout-ms 60000 --json
+# per worker: buka panel bernama, atau pakai ulang yang masih hidup (DIRECTION=vertical|horizontal selang-seling)
+"$AGENT_WORKFLOW_DIR/bin/worker-pane.sh" open "<Nama> (<Label><n>)" "claude --model <id sesuai peran>"   # → handle panel, mis. "Paijo (QA1)"
 orca orchestration worker-start --task <id> --terminal <handle panel> --worktree "id:$ORCA_WORKTREE_ID" --run <run> --json
 orca orchestration worker-read ...
+"$AGENT_WORKFLOW_DIR/bin/worker-pane.sh" close "<Nama> (<Label><n>)"   # peran itu tidak punya tugas lagi
 ```
+**Panel worker: pakai ulang atau tutup.** Panel worker hanya lewat `worker-pane.sh` (guard memblokir `orca terminal split` langsung). Skrip mencari panel hidup berjudul sama di tab SPV; ada → dipakai ulang, tidak ada → split baru. Jadi tidak pernah ada dua `Maman (Programmer1)`.
+- Agen yang sama dapat tugas lanjutan (revisi dari Reviewer, tiket berikutnya untuk peran itu) → nama sama, panel lama dipakai ulang. Tugasnya untuk tiket lain → kirim `/clear` dulu: `orca terminal send --terminal <handle panel> --text "/clear" --enter`.
+- Panel masih sibuk dengan tugas sebelumnya → `open` gagal (timeout). Tunggu `worker_done`, atau pakai nama berikutnya untuk pekerjaan paralel.
+- Peran itu tidak punya tugas lagi di batch ini (Coder setelah lolos review dan di-merge ke branch batch, Reviewer setelah review terakhir, QA setelah laporannya diterima) → `close` saat itu juga, jangan dibiarkan terbuka.
+- Akhir batch atau berhenti lebih awal → `close` semua panel worker batch ini. Panel SPV sendiri dan panel lain tidak ditutup.
 Mode izin worker = mode sesi SPV (otonom → tambah `--permission-mode bypassPermissions` di `--command`). `--model` tidak boleh digabung dengan `--terminal`; model ditentukan di `--command`.
 Di isi tugas tiap worker, tulis: "Ikuti `~/.claude/agents/<peran>.md`" (mis. `coder.md`, `qa.md`).
 
