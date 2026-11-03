@@ -36,7 +36,7 @@ flowchart LR
 4. **Reproduksi** (bila permintaan menyangkut perilaku aplikasi): device + akun dev/staging sesuai `devices.md` dan `credentials.md`, build setara versi yang diaudit (`build-release.md`), urutan alat Maestro → Android CLI → adb, screenshot bertanda. Permintaan soal dokumen/desain saja → device tidak disentuh.
 5. **Simpulkan:** gabungkan temuan dari `${TMPDIR:-/tmp}/audit/<slug>/*.md`. Akar masalah + keyakinan (**pasti** / **kuat** / **dugaan**), dampak, perkiraan ukuran perbaikan. Klaim tanpa bukti ditulis sebagai dugaan, tidak sebagai fakta.
 6. **Laporan final:** isi semua blok `pending` di dokumen yang sama (`replace`), unggah screenshot, tambah saran tiket Jira (tidak dibuat). Tanpa kredensial.
-7. **Bersihkan & ringkas:** `worker-pane.sh close` semua panel worker, lepas kunci device/akun (`AGENT_LOCK_PID=$PPID ... device-lock.sh release ...`), lalu `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/audit-mode.sh" off`. Di chat: link laporan + satu kalimat kesimpulan.
+7. **Bersihkan & ringkas:** `worker-pane.sh close` semua panel worker, lepas kunci device/akun (`AGENT_LOCK_PID=$PPID ... device-lock.sh release ...`), lalu `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/audit-mode.sh" off` sebagai panggilan Bash tersendiri (guard memeriksa seluruh perintah sebelum `off` jalan). Di chat: link laporan + satu kalimat kesimpulan.
 
 ## Berhenti lebih awal / galat
 Sebelum berhenti (tanya, galat, user membatalkan): minta worker berhenti dan tutup panelnya (`worker-pane.sh close`), lepas semua kunci, isi bagian dokumen yang sudah ada temuannya dan tandai sisanya belum selesai, lalu `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/audit-mode.sh" off`.
