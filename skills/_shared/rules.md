@@ -18,6 +18,8 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
 | Release | haiku (`claude-haiku-5-5`) | nomor build, build+upload, PR/MR, komentar & geser tiket | Done, upload prod tanpa izin |
 | Coder | sonnet (`claude-sonnet-5-5`) | TDD di branch sendiri | Jira, push, upload, device di luar jatah |
 | QA | sonnet (`claude-sonnet-5-5`) | Maestro, Schemathesis, Pact di device | Jira, push, upload, device di luar jatah |
+| Auditor | opus (`claude-opus-5-5`) | /audit-issue: kode, log, reproduksi | menulis repo/Jira |
+| Analis | opus (`claude-opus-5-5`) | /audit-issue: lampiran | menulis repo/Jira |
 
 Management (SPV, Validator, Reviewer, Release) memutuskan dan berbicara ke luar: Jira, Claude Docs, git remote, Firebase/TestFlight. Development (Coder, QA) hanya kode dan device. Housekeeping = skrip shell, tanpa agen. Model diubah di `~/.claude/agents/<peran>.md`.
 
@@ -94,7 +96,10 @@ Di isi tugas tiap worker, tulis: "Ikuti `~/.claude/agents/<peran>.md`" (mis. `co
 | Reviewer | Reviewer | Mbah Karto |
 | QA | QA | Paijo, Euis, Ningsih |
 | Release | Release | Sutini |
+| Auditor | Auditor | Cecep, Dadang, Sarip |
+| Analis | Analis | Bu Lastri |
 Contoh: `Maman (Programmer1)`, `Ujang (Programmer2)`, `Paijo (QA1)`, `Euis (QA2)`.
+Di `/audit-issue`, worker reproduksi memakai nama QA (Paijo, Euis, Ningsih) tetapi mengikuti `auditor.md`.
 
 ## Git
 - Branch kerja: `feature/` `fix/` `hotfix/` `docs/` `chore/` + kode tiket (mis. `fix/PROJ-1234`), dibuat di downstream.

@@ -36,6 +36,18 @@ Keputusan parsial boleh. TC yang butuh device lebih dari yang tersedia = **Terta
 4. **Satu bagian per TC**: hasil di kalimat pertama, langkah bernomor, screenshot berurutan; untuk API/kontrak tampilkan tabel endpoint → hasil.
 5. **Temuan**: branch + commit, nomor build dev/beta + link distribusi, data uji, checklist tindak lanjut.
 
+## Laporan audit (`/audit-issue`)
+Satu dokumen per audit, dibuat di awal audit dengan blok `pending` per bagian, lalu diisi dan dirapikan menjadi laporan final (dokumen yang sama). Urutan bagian:
+
+1. **Ringkasan untuk awam** (3–5 kalimat): apa yang ditanyakan, jawabannya, dan saran utama.
+2. **Permintaan asli** + daftar lampiran (terbaca / gagal + alasan).
+3. **Temuan per pertanyaan**: satu bagian per pertanyaan, tiap klaim dengan bukti (file:baris di ref, commit, potongan log, screenshot bertanda).
+4. **Perbandingan lampiran vs kode vs layar** (bila ada lampiran): tabel `Lampiran | Kode | Layar | Beda?`.
+5. **Akar masalah** + tingkat keyakinan (**pasti** / **kuat** / **dugaan**), dampak, perkiraan ukuran perbaikan.
+6. **Saran langkah berikutnya**.
+7. **Saran tiket Jira** (opsional, tidak dibuat): judul, deskripsi, AC, platform.
+8. **Cara audit**: versi/ref dan build yang diperiksa, device, alat yang dipakai, hal yang tidak bisa diperiksa (termasuk: guard tidak menangkap tulis lewat shell).
+
 ## Screenshot bertanda
 - Kotak merah + label merah teks putih, dibuat dengan `annotate.py` dari koordinat `maestro hierarchy` (cara lengkap: `devices.md`).
 - Label = kode AC + penjelasan singkat, mis. `AC2 pesan galat tampil`.
