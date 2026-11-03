@@ -187,8 +187,18 @@ printf '%s' "$(bash_json 'git push upstream main')" | "$G" >/dev/null 2>"$T/err"
 assert_eq "yes" "$(grep -q upstream "$T/err" && echo yes || echo no)" "block message on stderr"
 assert_exit 0 "jq present: unknown tool passes" -- sh -c "echo '{\"tool_name\":\"Write\"}' | '$G'"
 # workspace rules: no new worktrees/projects
-check 2 'git worktree add ../x -b feat/x'
-check 2 'git -C /x worktree add /tmp/y'
+# ticket worktrees: sibling of the checkout only; remove only <repo>-<number>, never forced
+check 0 'git worktree add ../work-11135 -b fix/PROJ-11135 origin/develop'
+check 0 "git worktree add -b fix/PROJ-2 $T/work-2"
+check 2 'git worktree add /tmp/y -b feat/x'
+check 2 'git worktree add ../../far-1 -b feat/x'
+check 2 'git worktree add "$TMPDIR/w-1"'
+check 0 'git worktree remove ../work-11135'
+check 2 'git worktree remove --force ../work-11135'
+check 2 'git worktree remove -f ../work-11135'
+check 2 'git worktree remove ../work-baa'
+check 2 'git worktree move ../work-1 ../work-2'
+check 0 'git worktree prune'
 check 0 'git worktree list'
 check 2 'orca repo add --path /x'
 check 2 'orca project setup-existing-folder --path /x'

@@ -80,7 +80,7 @@ Terbuka: format judul versi rilis; peran Fable 5.1; API key ASC (opsional); izin
 
 ## Workspace Orca (A, cadangan C)
 - Root project (primary) → audit, tanya, `/rilis-tiket`.
-- Domain = workspace yang dibuka user; semua agen batch kerja di dalamnya (satu sesi atau panel terbelah), tanpa workspace/worktree/project baru.
-- Workspace folder (Brighton RE/Staff): checkout domain = folder `<repo>-<domain>` yang sudah ada.
-- Tiket = branch bergantian di checkout domain; MR per tiket. Nomor build dev batch = angka tiket pertama.
-- Tidak aman dibagi → solo (C). Guard memblokir pembuatan workspace/worktree/project.
+- Domain = workspace yang dibuka user; semua agen batch kerja di dalamnya (satu sesi atau panel terbelah), tanpa project/workspace Orca baru.
+- Workspace folder (Brighton RE/Staff): checkout domain = folder `<repo>-<domain>`; belum ada → agen membuatnya.
+- Tiket = worktree tiket `<repo>-<nomor>` sejajar checkout domain, jalan paralel; MR per tiket. Agen menghapusnya setelah Ready To Review bila bersih dan sudah di-push. Nomor build dev batch = angka tiket pertama.
+- Tidak aman dibagi → solo (C). Guard: worktree hanya sejajar checkout, hapus hanya `<repo>-<nomor>` tanpa `--force`, tidak ada project/workspace Orca baru.

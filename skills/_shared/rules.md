@@ -32,7 +32,8 @@ Management (SPV, Validator, Reviewer, Release) memutuskan dan berbicara ke luar:
 - Memindah tiket Jira ke status yang tidak ada di `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit/Write file di worktree primary; berlaku untuk repo yang punya worktree tambahan (pola Orca).
 - Membuka terminal/agen di **tab baru** (`orca terminal create`, `orca agent launch`, `worker-start --agent`): agen tambahan selalu panel split.
-- Membuat workspace/worktree/project baru (`git worktree add`, `orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`).
+- Membuat project/repo/workspace Orca baru (`orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`).
+- `git worktree add` di luar folder sejajar checkout; `git worktree remove` selain worktree tiket `<repo>-<nomor>` atau dengan `--force`; `git worktree move`.
 
 Jangan mencari jalan memutar. Jika diblokir, laporkan pesannya ke SPV/user.
 
@@ -57,11 +58,13 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 - **Root project** (`isMainWorktree: true`, mis. "Brighton RE"): hanya audit, tanya, dan `/rilis-tiket`.
 - **Domain** = workspace yang dibuka user. **Semua agen batch bekerja di dalam domain itu saja**: satu sesi (yolo) atau panel terbelah di workspace yang sama (panel split, lihat Orkestrasi; jangan tab baru).
   - Domain git worktree (mis. BrightonChat "Manager"): kerja di checkout workspace itu.
-  - Domain workspace folder (mis. Brighton RE "BAA"): kerja di folder worktree domain yang sudah ada, `<path>/<repo>-<slug>` (slug = `displayName` huruf kecil, spasi → `-`; mis. `brighton-android-baa`, `brighton-ios-baa`). Belum ada → berhenti, minta user membuatnya.
-  - Tiket = branch `feature/|fix/|...<KODE>` di checkout domain, dikerjakan **bergantian** (satu branch aktif per checkout). Beberapa coder di satu tiket hanya bila file/modulnya terpisah.
-- **Cadangan (C):** tidak aman dibagi (coder menyentuh file yang sama, checkout dipakai domain lain, folder domain tidak ada) → satu agen (solo) saja, atau berhenti dan tanya.
-- **Kunci checkout:** sebelum mengubah branch/file, `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" acquire checkout:<path checkout> <domain>`; dipegang domain lain → cadangan C. Lepas saat selesai/berhenti.
-- **Dilarang (juga guard):** membuat workspace, worktree, atau project Orca baru dari `/develop-tiket` dan `/validate-tiket` (`orca worktree create`, `orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`), `git worktree add`, worktree di folder sementara. Satu-satunya pengecualian: `/rilis-tiket` membuat anak rilis dengan `orca worktree create --parent-worktree current`.
+  - Domain workspace folder (mis. Brighton RE "BAA"): checkout domain = `<path>/<repo>-<slug>` (slug = `displayName` huruf kecil, spasi → `-`; mis. `brighton-android-baa`, `brighton-ios-baa`). Belum ada → buat sejajar worktree lain repo itu: `git -C <worktree repo itu> worktree add ../<repo>-<slug> -b batch/<slug> <base>`, sebut di laporan.
+  - Checkout domain tetap di **branch batch** (lokal saja). Tiap tiket punya **worktree tiket** sendiri sejajar checkout domain, `<repo>-<nomor>` (nomor = angka KODE, mis. `brighton-android-11135`): `git -C <checkout domain> worktree add ../<repo>-<nomor> -b <feature|fix|...>/<KODE> <base>`. Tulis path apa adanya, tanpa variabel (guard memeriksa teks perintah). Sudah ada → pakai, jangan buat ulang. Catat worktree yang dibuat batch ini di rencana Docs.
+  - Tiket berbeda jalan **paralel** di worktree masing-masing. Beberapa coder di satu tiket hanya bila file/modulnya terpisah.
+- **Cadangan (C):** tidak aman dibagi (coder menyentuh file yang sama, worktree dipakai batch lain) → satu agen (solo) saja, atau berhenti dan tanya.
+- **Kunci checkout:** sebelum mengubah branch/file di checkout domain atau worktree tiket, `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" acquire checkout:<path> <KODE atau domain>`; dipegang batch lain → cadangan C. Lepas saat selesai/berhenti.
+- **Hapus worktree tiket** setelah tiket Ready To Review, hanya yang dibuat batch ini, bila `git -C <worktree> status --porcelain` kosong dan `git -C <worktree> log @{u}..` kosong (sudah di-push): `git -C <checkout domain> worktree remove ../<repo>-<nomor>` (tanpa `--force`; branch tetap ada). Syarat tidak terpenuhi → biarkan dan sebut di laporan. Checkout domain dan worktree buatan user tidak pernah dihapus.
+- **Dilarang (juga guard):** membuat project/repo/workspace Orca baru (`orca worktree create` dari `/develop-tiket` dan `/validate-tiket`, `orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`), worktree di folder sementara atau di luar folder project, `git worktree remove --force`, `git worktree move`. Pengecualian: `/rilis-tiket` membuat anak rilis dengan `orca worktree create --parent-worktree current`.
 
 Orkestrasi (SPV sebagai coordinator), tiap worker = **panel split** di terminal SPV, bukan tab baru. `worker-start --agent` selalu membuka tab sesuai setelan Orca, jadi jangan dipakai untuk worker; buat panelnya dulu, lalu serahkan ke `worker-start --terminal`:
 ```

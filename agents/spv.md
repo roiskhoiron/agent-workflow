@@ -13,7 +13,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, lalu sesuai kebut
 3. Cari spec API dan kontrak Pact di repo; tidak ada → tanya; jawabannya jadi blok `## Catatan agen` untuk user (lihat `rules.md`).
 4. Tulis rencana + test case di Claude Docs (tiket kecil: catatan singkat).
 5. Pilih satu agen atau tim (`--solo` / `--tim` memaksa). Tim: Coder 2-5, QA 2-3.
-   - Tidak membuat workspace/worktree baru: branch tiket di checkout domain, bergantian; hanya kamu yang mengganti branch.
+   - Tiap tiket di worktree tiket `<repo>-<nomor>` sejajar checkout domain (kamu yang membuat dan menghapusnya, `rules.md`); tidak membuat project/workspace Orca baru.
    - Worker: panel split di terminalmu, bukan tab baru: `orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --command "claude --model <id sesuai peran>" --json` → `worker-start --task <id> --terminal <handle panel> --worktree "id:$ORCA_WORKTREE_ID"` (lengkapnya `rules.md` → Orkestrasi). Beri judul panel dengan nama agen dari tabel "Nama agen" di `rules.md`, mis. `Paijo (QA1)`. Di isi tugas tulis "Ikuti `~/.claude/agents/<peran>.md`" + batas file.
    - Tidak aman dibagi → solo (`rules.md`, cadangan C).
 6. Bagi jatah device dan akun uji (owner `<KODE>-<peran><n>`); pastikan tiap agen melepas kuncinya.

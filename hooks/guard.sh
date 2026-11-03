@@ -50,7 +50,7 @@ check_git() {
     esac
   done
   GSUB_OFF=$((n - $#))
-  [ "$1" = worktree ] && [ "${2:-}" = add ] && block "git worktree add dilarang: agen bekerja di workspace domain yang dibuka user (lihat rules.md, Workspace & worktree). Butuh folder baru → minta user."
+  [ "$1" = worktree ] && case ${2:-} in add|remove|move) check_worktree "$d" "${@:2}";; esac
   # unknown global option may have swallowed a value: if `push` appears anywhere, treat as push
   if [ "$1" != push ] && [ -n "$unk" ]; then
     while [ $# -gt 0 ] && [ "$1" != push ]; do shift; done
@@ -100,6 +100,30 @@ check_git() {
       block "force-push/hapus branch terlindungi '$dst' dilarang. Push tanpa --force/+, atau ke branch fitur."
     fi
   done
+}
+
+# git worktree add/remove: only a sibling of the current checkout; remove only ticket
+# worktrees (<repo>-<number>) and never forced, so dirty work can't be lost (rules.md, Workspace & worktree)
+check_worktree() {
+  local d=$1 op=$2 p='' top
+  shift 2
+  [ "$op" = move ] && block "git worktree move dilarang: jangan memindah worktree. Minta user."
+  while [ $# -gt 0 ]; do
+    case $1 in
+      -b|-B|--reason) shift 2;;
+      -f|--force) [ "$op" = remove ] && block "git worktree remove --force dilarang: worktree yang masih ada perubahan tidak boleh dipaksa hapus. Commit + push dulu, atau minta user."; shift;;
+      -*) shift;;
+      *) [ -n "$p" ] || p=$1; shift;;
+    esac
+  done
+  [ -n "$p" ] || return 0
+  [ -n "$PY" ] || block "python3 tidak ditemukan, guard tidak bisa memeriksa path worktree."
+  top=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null) || block "git worktree $op: repo tidak dikenali di $d."
+  p=$("$PY" -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$(join_path "$(expand_home "$p")" "$d")")
+  top=$("$PY" -c 'import os,sys; print(os.path.dirname(os.path.realpath(sys.argv[1])))' "$top")
+  [ "${p%/*}" = "$top" ] || block "git worktree $op hanya untuk folder sejajar checkout ini ($top/<repo>-<nomor tiket>), tulis path apa adanya tanpa variabel: $p (rules.md, Workspace & worktree)."
+  [ "$op" = remove ] && ! [[ ${p##*/} =~ -[0-9]+$ ]] && block "git worktree remove hanya untuk worktree tiket <repo>-<nomor tiket>: ${p##*/} bukan worktree tiket (worktree domain/milik user tidak dihapus agen)."
+  return 0
 }
 
 # orca: no new projects/repos or workspaces outside the user's domain (rules.md, Workspace & worktree)
