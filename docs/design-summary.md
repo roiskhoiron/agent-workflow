@@ -42,6 +42,11 @@ Keputusan parsial boleh; TC butuh device lebih dari tersedia = Tertahan.
 1 SPV cek requirement + tiket terkait/blocking -> 2 SPV dokumen rencana + test case (Claude Docs) -> 3 Coder kode+tes TDD, branch feature/ fix/ hotfix/ docs/ chore/ di downstream -> 4 Reviewer performa/crash (revisi loop ke 3) -> 5 QA uji Maestro/Schemathesis/Pact, Claude Docs + screenshot -> 6 Release build dev/beta/prod ke Firebase/TestFlight -> 7 Release push downstream + PR/MR ke upstream -> 8 komentar Jira semua link -> 9 geser Ready To Review.
 Tiket kecil: satu agen, langkah 2 catatan singkat.
 
+## /audit-issue
+- Untuk permintaan/keluhan tanpa tiket Jira, dengan lampiran opsional (mockup, PDF, gambar, link). Semua peran Opus.
+- Hanya-baca, dipaksa guard: `AGENT_AUDIT=1` di panel worker, `bin/audit-mode.sh on|off` untuk sesi SPV. Git hanya baca, Jira/Confluence tidak ditulis, edit file hanya di `${TMPDIR:-/tmp}/audit/`.
+- Hasil: satu dokumen Claude Docs (dibuat di awal, diisi sampai final) + saran tiket Jira yang tidak dibuat. Spec: `docs/superpowers/specs/2026-11-03-audit-issue-design.md`.
+
 ## Rilis dan hotfix
 Branch kerja di downstream (fork); upstream hanya satu MR per rilis/hotfix.
 Contoh: hotfix/v1.0.2 dari master; fix/PROJ-101 & fix/PROJ-105 masing2 MR ke hotfix/v1.0.2 di downstream; lalu satu MR hotfix/v1.0.2 -> master upstream.
