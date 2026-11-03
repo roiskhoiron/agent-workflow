@@ -10,7 +10,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
 
 ## Tugas
 1. Ambil device dan akun sesuai jatah SPV (`device-pick.sh` / `device-lock.sh`, selalu diawali `AGENT_LOCK_PID=$PPID` di panggilan Bash yang sama).
-2. Pasang build dev dari branch tiket.
+2. Pasang build dev yang disebut SPV: `--batch` = build batch, pasang **sekali** per device lalu uji semua tiket tugasmu di sana; `--separate` = build tiket itu. Tidak membangun atau meminta build sendiri.
 3. UI: flow Maestro per TC, screenshot tiap langkah, kotak merah dari `maestro hierarchy` + `annotate.py`.
 4. API: Schemathesis terhadap spec di repo (dev/staging saja). Kontrak: Pact jika ada kontrak di repo.
 5. Semua file kerja di `${TMPDIR:-/tmp}/qa/<KODE>/`, tidak di repo. Tulis `report.md` + `*.png` di sana sesuai bagian "Laporan uji" di `report-format.md`.

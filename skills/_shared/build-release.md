@@ -21,7 +21,8 @@ Build dev memakai ID terpisah berakhiran `.dev` (mis. `com.example.app.dev`) sup
 
 ## Build per tiket
 - **Dev**: selalu. **Beta**: juga. **Prod**: hanya setelah izin (gate).
-- Worktree domain: satu build dev untuk seluruh batch; semua kode tiket di catatan rilis Firebase.
+- `--batch` (default): satu build dev untuk seluruh batch, setelah semua tiket lolos review atau dikeluarkan; perbaikan pasca-QA dikumpulkan lalu satu build ulang. Semua kode tiket di catatan rilis Firebase.
+- `--separate`: satu build dev per tiket dari worktree tiketnya.
 
 ## Upload
 Android (dev/beta):

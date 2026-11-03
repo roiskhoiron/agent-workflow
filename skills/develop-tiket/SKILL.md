@@ -1,11 +1,15 @@
 ---
 name: develop-tiket
-description: Kerjakan tiket Jira In Progress sampai Ready To Review (rencana, kode TDD, review, QA di device, build, PR/MR, komentar Jira). Dipanggil lewat `/develop-tiket KODE... [--solo|--tim]` dari worktree domain Orca. Use when asked to develop, implement, or fix a Jira ticket; kata kunci - kerjakan tiket, develop tiket, implementasi tiket.
-argument-hint: KODE-TIKET... [--solo|--tim]
+description: Kerjakan tiket Jira In Progress sampai Ready To Review (rencana, kode TDD, review, QA di device, build, PR/MR, komentar Jira). Dipanggil lewat `/develop-tiket KODE... [--solo|--tim] [--batch|--separate]` dari worktree domain Orca. Use when asked to develop, implement, or fix a Jira ticket; kata kunci - kerjakan tiket, develop tiket, implementasi tiket.
+argument-hint: KODE-TIKET... [--solo|--tim] [--batch|--separate]
 ---
-Kerjakan satu atau lebih tiket Jira (`$ARGUMENTS`) sebagai satu **batch**. Sesi ini = **SPV**: ikuti `~/.claude/agents/spv.md` (tidak menulis kode produk, tidak memindah ke Done).
+Kerjakan satu atau lebih tiket Jira (`$ARGUMENTS`). Sesi ini = **SPV**: ikuti `~/.claude/agents/spv.md` (tidak menulis kode produk, tidak memindah ke Done).
 
 Baca dulu (jangan disalin ke sini): `~/.claude/skills/_agent-workflow-shared/rules.md`, `devices.md`, `credentials.md`, `build-release.md`, `report-format.md`, serta `~/.claude/agents/{coder,reviewer,qa,release}.md`. Skrip: `$AGENT_WORKFLOW_DIR/bin/<skrip>` (`AGENT_WORKFLOW_DIR` diisi seperti di `rules.md`). Setiap panggilan `device-lock.sh`/`device-pick.sh` diawali `AGENT_LOCK_PID=$PPID` di panggilan Bash yang sama.
+
+**Alur** (`--batch` default; terpisah dari `--solo`/`--tim`, boleh digabung):
+- **`--batch`:** semua tiket = satu batch: satu rencana, satu branch batch, **satu build**, QA di build itu. Proses berat jalan **sekali untuk semua tiket**, di titik tunggu langkah 7 dan 9. Tidak ada build, pasang, atau QA per tiket.
+- **`--separate`:** tiap tiket jalur sendiri: rencana, build dev dari branch tiket, QA, laporan, dan selesai sendiri; tanpa branch batch. Build tetap antre `build:heavy`.
 
 ```mermaid
 flowchart LR
@@ -19,10 +23,10 @@ flowchart LR
 ```
 
 ## Langkah
-0. **Guard:** kenali domain (`rules.md` → Workspace & worktree: `$ORCA_WORKTREE_ID`). Root project (`isMainWorktree: true`) atau tidak ketemu → berhenti: "Jalankan dari workspace domain". Tentukan checkout domain (git worktree workspace, atau `<repo>-<slug>` untuk workspace folder; tidak ada → buat sesuai `rules.md`), lalu kunci `checkout:<path>`. Branch batch = branch checkout domain saat ini (hanya lokal, **tidak pernah** di-push ke upstream).
+0. **Guard:** kenali domain (`rules.md` → Workspace & worktree: `$ORCA_WORKTREE_ID`). Root project (`isMainWorktree: true`) atau tidak ketemu → berhenti: "Jalankan dari workspace domain". Tentukan checkout domain (git worktree workspace, atau `<repo>-<slug>` untuk workspace folder; tidak ada → buat sesuai `rules.md`), lalu kunci `checkout:<path>`. Branch batch (`--batch`) = branch checkout domain saat ini (hanya lokal, **tidak pernah** di-push ke upstream).
 1. **Prasyarat (sekali):** Atlassian MCP terjangkau (`mcp__claude_ai_Atlassian__atlassianUserInfo`); `~/.agent-workflow/jira-transitions.json` punya entri project dengan id **Ready To Review** (belum → "Setup transisi Jira" di `rules.md`). Akun uji ada (`credentials.md`); tidak ada → berhenti & tanya.
 2. **Baca tiket** + komentar + tiket terkait/blocking (`getJiraIssue`, `searchJiraIssuesUsingJql`). Catat per tiket: AC, platform (ios/android/api), dan apakah ter-link ke tiket `[release-request]`/`[hotfix-release]` (→ base & tujuan MR = branch rilis itu di `origin`; selain itu base `develop` atau sesuai `CLAUDE.md`). Tiket blocking belum selesai / requirement kabur → periksa dulu, lalu tanya. Cari spec API & kontrak Pact di repo; tidak ada → tanya; jawabannya jadi blok `## Catatan agen` untuk user (lihat `rules.md`).
-3. **Rencana + test case** di Claude Docs (`mcp__claude_ai_Claude_Docs__batch`): satu dokumen per batch, TC per AC per tiket. `--solo`/tiket kecil: catatan singkat cukup.
+3. **Rencana + test case** di Claude Docs (`mcp__claude_ai_Claude_Docs__batch`): `--batch`: satu dokumen untuk semua tiket; `--separate`: satu dokumen per tiket. TC per AC per tiket. `--solo`/tiket kecil: catatan singkat cukup.
 4. **Pilih mode** (`--solo`/`--tim` memaksa; tanpa flag → SPV menilai: 1 tiket kecil = solo, selain itu tim). Tiap tiket di **worktree tiket** `<repo>-<nomor>` sejajar checkout domain, branch `feature/|fix/|hotfix/|docs/|chore/<KODE>` dari `<base>` (`rules.md` → Workspace & worktree); tiket berbeda jalan paralel, tiap tiket MR sendiri. Tidak ada project/workspace Orca baru.
    - **Solo:** SPV sendiri menjalankan peran Coder → Reviewer (review diff sendiri dengan daftar cek `reviewer.md`, catat di laporan bahwa review bukan independen) → QA → Release, berurutan, sesuai file perannya.
    - **Tim:** `orca orchestration run-create --objective "develop <KODE...>" --json` → per tiket `task-create --run <run> --spec ... --task-title "<KODE> code"`, lalu tiap worker sebagai **panel split** di terminal SPV (`worker-pane.sh open "<Nama> (<Label><n>)" "claude --model <model>"` → `worker-start --task <id> --terminal <handle panel> --worktree "id:$ORCA_WORKTREE_ID" --run <run> --json`; panel bernama sama dipakai ulang, panel yang tugasnya habis ditutup dengan `worker-pane.sh close`; lengkapnya di `rules.md` → Orkestrasi; jangan `--agent`, itu membuka tab baru):
@@ -34,21 +38,26 @@ flowchart LR
      | Release | `claude-haiku-5-5` | |
      Coder tidak boleh `git checkout` branch lain atau pindah ke worktree tiket lain; path worktree disebut di tugas. Tidak aman dibagi → cadangan solo (`rules.md`). Isi tugas: "Ikuti `~/.claude/agents/<peran>.md`", kode tiket, AC/TC, branch, batas file, jatah device/akun, folder laporan. Pantau dengan `orca orchestration check --run <run> --wait` dan `worker-read --dispatch <id>`.
 5. **Kode (TDD) → review:** Coder commit lokal di branch tiket (pesan menyebut KODE). Reviewer memeriksa performa/crash; temuan **wajib** (Critical/Important) → kembali ke Coder, review ulang sampai bersih.
-6. **Branch batch:** di checkout domain, `git checkout <branch batch>` lalu `git merge --no-ff <branch tiket>` untuk tiap tiket yang lolos review. Konflik → berhenti dan tanya (sebut file dan tiketnya).
-7. **Build (sekali per batch, oleh Release):** kunci `build:heavy` dulu (owner `<KODE-pertama>-release1`), lepas sesudahnya; build antre satu per satu.
-   - Dev selalu: nomor = `build-number.sh dev <semua KODE batch>`; semua KODE di catatan rilis Firebase.
+6. **Branch batch** (`--batch`; `--separate` lewati): di checkout domain, `git checkout <branch batch>` lalu `git merge --no-ff <branch tiket>` untuk tiap tiket yang lolos review. Konflik → berhenti dan tanya (sebut file dan tiketnya).
+7. **Build (oleh Release):** kunci `build:heavy` dulu (owner `<KODE-pertama>-release1`), lepas sesudahnya; build antre satu per satu.
+   - `--batch`: **titik tunggu.** Build hanya setelah **semua** tiket lolos review dan di-merge, atau dikeluarkan dari batch (alasan tertulis di rencana). Satu build dari branch batch. Jangan build saat sebagian tiket masih dikerjakan.
+   - `--separate`: satu build per tiket dari worktree tiketnya, begitu tiket itu lolos review.
+   - Dev selalu: nomor = `build-number.sh dev <KODE batch, atau satu KODE di --separate>`; semua KODE build itu di catatan rilis Firebase.
    - Beta: `build-number.sh next asc=… firebase=… tag=… project=…`; exit 3 → berhenti dan tanya (tim: `gate-create`).
    - Prod: hanya lewat gate/izin eksplisit user, tidak pernah otomatis.
-8. **QA per tiket** di build dev batch, folder `${TMPDIR:-/tmp}/qa/<KODE>/`:
+8. **QA per tiket** di build dev (`--batch`: build batch, **dipasang sekali per device** lalu semua tiket diuji di sana; `--separate`: build tiket itu), folder `${TMPDIR:-/tmp}/qa/<KODE>/`:
    - SPV membagi jatah: per QA run, **satu** `device-pick.sh <ios|android> <KODE>-qa<n>` per platform (platform disebut di tugas), dipakai untuk semua TC run itu; akun lewat `device-lock.sh acquire account:qa.userN <KODE>-qa<n>`.
    - UI → Maestro + screenshot bertanda; API → Schemathesis (dev/staging); kontrak → Pact. Spec/kontrak tidak ada di repo → TC itu Tertahan + tanya.
    - QA menulis `report.md` + `*.png` sesuai "Laporan uji"; Gagal → kembali ke langkah 5.
-9. **Putuskan selesai** (per tiket) hanya bila: semua TC AC **Lulus**, atau **Tertahan** dengan alasan tertulis; review tanpa temuan wajib; tes project lulus. Belum → ulangi 5–8 untuk tiket itu.
+9. **Putuskan selesai** (per tiket) hanya bila: semua TC AC **Lulus**, atau **Tertahan** dengan alasan tertulis; review tanpa temuan wajib; tes project lulus. Belum → ulangi 5–8 untuk tiket itu, dengan aturan:
+   - `--batch`: **titik tunggu.** Perbaiki dan review semua tiket yang gagal dulu, merge ulang, lalu **satu** build ulang untuk batch; QA ulang tiket yang diperbaiki, tiket lain cukup cek singkat tidak rusak. Tidak ada build ulang per tiket.
+   - Tiket macet (butuh jawaban, blocking) → keluarkan dari batch, laporkan statusnya, batch jalan terus tanpa tiket itu. Tidak dijalankan sendiri diam-diam.
+   - `--separate`: ulangi hanya untuk tiket itu.
 10. **Laporan:** SPV publikasikan laporan uji per tiket ke Claude Docs (`mcp__claude_ai_Claude_Docs__batch`, unggah screenshot). **Tunggu link dokumen kembali** sebelum lanjut; tanpa link → jangan komentar Jira.
 11. **Push + PR/MR (Release):** `git push origin <branch tiket>` (hanya `origin`, branch batch tidak di-push). Tujuan: ter-link tiket rilis → branch rilis di downstream; selain itu → upstream base `develop`/`CLAUDE.md`. `gh pr create` bila host remote GitHub, `glab mr create` bila GitLab (cek `git remote get-url`). Judul berisi KODE; isi ringkasan, link laporan, nomor build.
 12. **Komentar Jira** (`addCommentToJiraIssue`) per tiket: baris pertama link laporan, lalu link rencana, build dev/beta, PR/MR, ringkasan Lulus/Tertahan.
 13. **Transisi** ke Ready To Review (`transitionJiraIssue`, id dari `jira-transitions.json`). Tidak pernah Done.
-14. **Bersihkan & ringkas:** hapus worktree tiket buatan batch ini yang sudah Ready To Review (syarat di `rules.md`; tidak memenuhi → biarkan, sebut di ringkasan); tutup semua panel worker batch ini (`worker-pane.sh close`); pastikan semua kunci (device, akun, `build:heavy`, `checkout:*`) dilepas.
+14. **Bersihkan & ringkas:** hapus worktree tiket buatan batch ini yang sudah Ready To Review (syarat di `rules.md`; tidak memenuhi → biarkan, sebut di ringkasan; tiket yang dikeluarkan dari batch tetap ditulis statusnya); tutup semua panel worker batch ini (`worker-pane.sh close`); pastikan semua kunci (device, akun, `build:heavy`, `checkout:*`) dilepas.
 
    | KODE | Status | Laporan | Build | PR/MR |
    |---|---|---|---|---|

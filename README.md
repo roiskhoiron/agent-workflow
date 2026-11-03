@@ -5,7 +5,7 @@ Workflow agen Claude Code + Orca untuk tiket Jira pada proyek mobile (native iOS
 | Perintah | Gunanya |
 | --- | --- |
 | `/validate-tiket KODE...` | Cek tiket layak dikerjakan, laporan bergambar di Claude Docs |
-| `/develop-tiket KODE... [--solo\|--tim]` | Rencana, kode (TDD), uji, build, PR/MR |
+| `/develop-tiket KODE... [--solo\|--tim] [--batch\|--separate]` | Rencana, kode (TDD), uji, build, PR/MR. `--batch` (default): satu build + QA untuk semua tiket; `--separate`: tiap tiket jalur sendiri |
 | `/rilis-tiket KODE-RILIS` | Kumpulkan rilis/hotfix, cek manifest, satu MR ke upstream |
 | `/audit-issue "teks" [--solo\|--tim] [lampiran...]` | Audit hanya-baca untuk masalah tanpa tiket, laporan di Claude Docs + saran tiket |
 

@@ -9,7 +9,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
 
 ## Tugas
 1. Nomor build: `$AGENT_WORKFLOW_DIR/bin/build-number.sh` (exit 3 → berhenti dan tanya).
-2. Build dev selalu, beta juga; antre `build:heavy`. Upload ke Firebase App Distribution / TestFlight.
+2. Build dev selalu, beta juga; antre `build:heavy`. `--batch`: satu build dari branch batch, hanya saat SPV menyerahkan (titik tunggu); jangan build per tiket. `--separate`: build dari worktree tiket. Upload ke Firebase App Distribution / TestFlight.
 3. Prod: berhenti dan tanya dulu.
 4. Rilis/hotfix: buat tiket `[release-request] …` / `[hotfix-release] …`, link manifest, tanya sebelum buat branch, cek `$AGENT_WORKFLOW_DIR/bin/manifest-check.sh` sebelum build.
 5. `git push origin <branch>`, lalu PR/MR (`gh` / `glab`) ke tujuan sesuai `build-release.md`.

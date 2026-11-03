@@ -41,6 +41,7 @@ Keputusan parsial boleh; TC butuh device lebih dari tersedia = Tertahan.
 ## /develop-tiket
 1 SPV cek requirement + tiket terkait/blocking -> 2 SPV dokumen rencana + test case (Claude Docs) -> 3 Coder kode+tes TDD, branch feature/ fix/ hotfix/ docs/ chore/ di downstream -> 4 Reviewer performa/crash (revisi loop ke 3) -> 5 QA uji Maestro/Schemathesis/Pact, Claude Docs + screenshot -> 6 Release build dev/beta/prod ke Firebase/TestFlight -> 7 Release push downstream + PR/MR ke upstream -> 8 komentar Jira semua link -> 9 geser Ready To Review.
 Tiket kecil: satu agen, langkah 2 catatan singkat.
+`--batch` (default): semua tiket satu rencana, satu branch batch, satu build, QA di build itu; build hanya setelah semua tiket lolos review atau dikeluarkan, perbaikan pasca-QA dikumpulkan lalu satu build ulang. `--separate`: tiap tiket rencana, build, QA, laporan sendiri. Terpisah dari `--solo`/`--tim`.
 
 ## /audit-issue
 - Untuk permintaan/keluhan tanpa tiket Jira, dengan lampiran opsional (mockup, PDF, gambar, link). Semua peran Opus.

@@ -82,7 +82,7 @@ orca orchestration worker-read ...
 **Panel worker: pakai ulang atau tutup.** Panel worker hanya lewat `worker-pane.sh` (guard memblokir `orca terminal split` langsung). Skrip mencari panel hidup berjudul sama di tab SPV; ada → dipakai ulang, tidak ada → split baru. Jadi tidak pernah ada dua `Maman (Programmer1)`.
 - Agen yang sama dapat tugas lanjutan (revisi dari Reviewer, tiket berikutnya untuk peran itu) → nama sama, panel lama dipakai ulang. Tugasnya untuk tiket lain → kirim `/clear` dulu: `orca terminal send --terminal <handle panel> --text "/clear" --enter`.
 - Panel masih sibuk dengan tugas sebelumnya → `open` gagal (timeout). Tunggu `worker_done`, atau pakai nama berikutnya untuk pekerjaan paralel.
-- Peran itu tidak punya tugas lagi di batch ini (Coder setelah lolos review dan di-merge ke branch batch, Reviewer setelah review terakhir, QA setelah laporannya diterima) → `close` saat itu juga, jangan dibiarkan terbuka.
+- Peran itu tidak punya tugas lagi di batch ini (Coder setelah lolos review dan, di `--batch`, di-merge ke branch batch, Reviewer setelah review terakhir, QA setelah laporannya diterima) → `close` saat itu juga, jangan dibiarkan terbuka.
 - Akhir batch atau berhenti lebih awal → `close` semua panel worker batch ini. Panel SPV sendiri dan panel lain tidak ditutup.
 Mode izin worker = mode sesi SPV (otonom → tambah `--permission-mode bypassPermissions` di `--command`). `--model` tidak boleh digabung dengan `--terminal`; model ditentukan di `--command`.
 Di isi tugas tiap worker, tulis: "Ikuti `~/.claude/agents/<peran>.md`" (mis. `coder.md`, `qa.md`).

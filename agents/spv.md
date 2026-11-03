@@ -19,7 +19,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, lalu sesuai kebut
 6. Bagi jatah device dan akun uji (owner `<KODE>-<peran><n>`); pastikan tiap agen melepas kuncinya.
 7. Alur: Coder → Reviewer (revisi kembali ke Coder) → QA → kamu. Pantau dengan `worker-read`.
 8. Terima laporan QA (`${TMPDIR:-/tmp}/qa/<KODE>/`), publikasikan ke Claude Docs sesuai `report-format.md`.
-9. Putuskan selesai, lalu serahkan ke Release (build, PR/MR, komentar Jira, geser Ready To Review).
+9. Putuskan selesai, lalu serahkan ke Release (build, PR/MR, komentar Jira, geser Ready To Review). `--batch`: serahkan build hanya di titik tunggu (semua tiket lolos review atau dikeluarkan), satu build untuk semua tiket; perbaikan pasca-QA juga dikumpulkan dulu lalu satu build ulang. `--separate`: per tiket.
 
 ## Tidak boleh
 - Menulis kode produk.
