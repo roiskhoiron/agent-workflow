@@ -20,11 +20,11 @@ S="$C/settings.json"
 [ -f "$S" ] || echo '{}' > "$S"
 [ -e "$S.bak-agent-workflow" ] || cp "$S" "$S.bak-agent-workflow"  # keep the first original
 tmp=$(mktemp)
-jq --arg cmd "\"$REPO/hooks/guard.sh\"" '
+jq --arg cmd "\"$REPO/hooks/guard.sh\"" --arg m 'Bash|Edit|Write|MultiEdit|NotebookEdit|mcp__claude_ai_Atlassian__.*' '
+  def isguard: any((.hooks // [])[]?; .command | tostring | test("/guard\\.sh\"?$"));
   .hooks.PreToolUse = ((.hooks.PreToolUse // [])
-    | if any(.[]; (.hooks // [])[]?.command | tostring | test("/guard\\.sh\"?$")) then .
-      else . + [{matcher:"Bash|Edit|Write|MultiEdit|mcp__claude_ai_Atlassian__transitionJiraIssue",
-                 hooks:[{type:"command",command:$cmd}]}] end)' "$S" > "$tmp"
+    | if any(.[]; isguard) then map(if isguard then .matcher = $m else . end)
+      else . + [{matcher:$m, hooks:[{type:"command",command:$cmd}]}] end)' "$S" > "$tmp"
 mv "$tmp" "$S"
 
 P="$REPO/launchd/com.agentworkflow.housekeeping.plist"

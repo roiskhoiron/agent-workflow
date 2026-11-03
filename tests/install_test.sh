@@ -27,4 +27,12 @@ c=$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$H2/.claude/settings.json")
 assert_eq 0 "$(echo '{"tool_name":"Read"}' | sh -c "$c" >/dev/null 2>&1; echo $?)" "space path: hook command runs via shell"
 assert_eq "yes" "$([ -d "$H/.agent-workflow/logs" ] && echo yes || echo no)" "logs dir created for launchd plist"
 assert_eq "1" "$(grep -c '^# Jira agent workflow' "$H/.claude/CLAUDE.md")" "global CLAUDE.md section appended once"
+NEWM='Bash|Edit|Write|MultiEdit|NotebookEdit|mcp__claude_ai_Atlassian__.*'
+assert_eq "$NEWM" "$(jq -r '.hooks.PreToolUse[]|select(.hooks[0].command|test("guard.sh"))|.matcher' "$S")" "new install: guard matcher"
+# existing guard entry with the old matcher gets the new one, still once
+H3="$H/home3"; mkdir -p "$H3/.claude"
+jq -n --arg c "\"$REPO/hooks/guard.sh\"" '{hooks:{PreToolUse:[{matcher:"Bash|Edit|Write|MultiEdit|mcp__claude_ai_Atlassian__transitionJiraIssue",hooks:[{type:"command",command:$c}]}]}}' > "$H3/.claude/settings.json"
+bash "$REPO/install.sh" --home "$H3" >/dev/null 2>&1
+assert_eq "$NEWM" "$(jq -r '.hooks.PreToolUse[]|select(.hooks[0].command|test("guard.sh"))|.matcher' "$H3/.claude/settings.json")" "upgrade: guard matcher replaced"
+assert_eq 1 "$(jq '[.hooks.PreToolUse[]|select(.hooks[0].command|test("guard.sh"))]|length' "$H3/.claude/settings.json")" "upgrade: guard hook once"
 exit $FAILS
