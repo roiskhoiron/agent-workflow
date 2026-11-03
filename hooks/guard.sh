@@ -50,6 +50,7 @@ check_git() {
     esac
   done
   GSUB_OFF=$((n - $#))
+  [ -n "$AUDIT" ] && check_git_audit "$@"
   [ "$1" = worktree ] && case ${2:-} in add|remove|move) check_worktree "$d" "${@:2}";; esac
   # unknown global option may have swallowed a value: if `push` appears anywhere, treat as push
   if [ "$1" != push ] && [ -n "$unk" ]; then
@@ -102,6 +103,66 @@ check_git() {
   done
 }
 
+audit_block() { block "$1 dilarang: mode audit hanya-baca (/audit-issue). Catat temuan di laporan, jangan ubah repo/Jira."; }
+
+# audit mode: only read-only git subcommands; branch/tag only list, never create/delete
+check_git_audit() {
+  local s=${1:-} a list='' skip=''
+  shift
+  case $s in
+    ''|show|log|grep|blame|diff|fetch|status|ls-files|ls-tree|rev-parse|rev-list|describe|cat-file|for-each-ref|show-ref|shortlog|reflog|name-rev|merge-base|help|version|--version|--help) return 0;;
+    branch|tag)
+      for a; do
+        [ -n "$skip" ] && { skip=''; continue; }
+        case $a in
+          -l|--list) list=1;;
+          --contains|--no-contains|--merged|--no-merged|--points-at|--sort|--format) skip=1;;
+          -a) [ "$s" = tag ] && audit_block "git tag -a";;
+          -d|-D|-m|-M|-c|-C|-f|-u|-s|-F|-e|--delete|--move|--copy|--force|--annotate|--sign|--edit-description|--unset-upstream|--set-upstream-to*|--track*|--file*|--message*) audit_block "git $s $a";;
+          -*) ;;
+          *) [ -n "$list" ] || audit_block "git $s $a";;
+        esac
+      done;;
+    remote) case ${1:-} in ''|-v|--verbose|get-url|show) ;; *) audit_block "git remote $1";; esac;;
+    config) for a; do case $a in --get|--get-all|--get-regexp|--list|-l) return 0;; esac; done; audit_block "git config";;
+    worktree) [ "${1:-}" = list ] || audit_block "git worktree ${1:-}";;
+    stash) case ${1:-} in list|show) ;; *) audit_block "git stash ${1:-}";; esac;;
+    *) audit_block "git $s";;
+  esac
+  return 0
+}
+
+# audit mode: gh/glab read-only (no PR/MR/issue/release writes, api GET without fields)
+check_forge() {
+  local a prev=''
+  case ${1:-} in
+    pr|mr|issue) case ${2:-} in create|comment|merge|close|edit|review|approve|reopen|note|delete|lock|unlock|ready) audit_block "gh/glab $1 $2";; esac;;
+    release) case ${2:-} in create|delete|edit|upload) audit_block "gh/glab release $2";; esac;;
+    api)
+      for a; do
+        case $a in -f|-F|--field|--raw-field|--input|--field=*|--raw-field=*|--input=*) audit_block "gh/glab api $a";; esac
+        case $prev in -X|--method) [ "$a" = GET ] || audit_block "gh/glab api $prev $a";; esac
+        case $a in --method=*) [ "${a#*=}" = GET ] || audit_block "gh/glab api $a";; -X?*) [ "${a#-X}" = GET ] || audit_block "gh/glab api $a";; esac
+        prev=$a
+      done;;
+  esac
+  return 0
+}
+
+# true when $1 resolves inside ${TMPDIR:-/tmp}/audit or /tmp/audit (symlinks like /tmp -> /private/tmp resolved)
+in_audit_dir() {
+  "$PY" -c '
+import os, sys
+def rp(p):
+    head, tail = p, ""
+    while not os.path.exists(head) and head != "/":
+        head, t = os.path.split(head); tail = os.path.join(t, tail) if tail else t
+    return os.path.normpath(os.path.join(os.path.realpath(head), tail))
+f = rp(sys.argv[1])
+sys.exit(0 if any(f.startswith(rp(r).rstrip("/") + "/") for r in sys.argv[2:]) else 1)
+' "$1" "${TMPDIR:-/tmp}/audit" /tmp/audit
+}
+
 # git worktree add/remove: only a sibling of the current checkout; remove only ticket
 # worktrees (<repo>-<number>) and never forced, so dirty work can't be lost (rules.md, Workspace & worktree)
 check_worktree() {
@@ -131,6 +192,7 @@ check_orca() {
   local a
   case "$1 ${2:-}" in
     'repo add'|'project setup-'*) block "orca $1 $2 dilarang: agen tidak membuat project/repo Orca baru. Minta user.";;
+    'worktree create') [ -n "$AUDIT" ] && audit_block "orca worktree create";;
     'terminal split') block "orca terminal split langsung dilarang: buka panel worker lewat \"\$AGENT_WORKFLOW_DIR/bin/worker-pane.sh\" open \"<Nama> (<Label><n>)\" \"<command>\" supaya panel bernama sama dipakai ulang (rules.md, Orkestrasi).";;
     'terminal create'|'agent launch') block "orca $1 $2 dilarang: membuka tab baru. Pakai panel split: orca terminal split --terminal \"\$ORCA_TERMINAL_HANDLE\" (rules.md, Orkestrasi).";;
     'orchestration worker-start') case " $* " in *' --agent '*|*' --agent='*) block "worker-start --agent dilarang: membuka tab baru. Split panel dulu, lalu worker-start --terminal <handle panel> (rules.md, Orkestrasi).";; esac;;
@@ -226,6 +288,7 @@ check_Bash() {
           esac;;
         git) GSUB_OFF=-1; check_git "${w[@]:$((i+1))}"; gsub=$((i + 1 + GSUB_OFF));;
         orca) check_orca "${w[@]:$((i+1))}";;
+        gh|glab) [ -n "$AUDIT" ] && check_forge "${w[@]:$((i+1))}";;
         rm) [ $i -eq $gsub ] || check_rm "${w[@]:$((i+1))}";;
       esac
       prev=${w[$i]}
@@ -237,10 +300,14 @@ check_Bash() {
 # (Orca pattern); a plain checkout without linked worktrees is editable.
 check_edit() {
   local f d pd gd cd_
-  f=$(printf '%s' "$input" | "$JQ" -r '.tool_input.file_path // empty' 2>/dev/null)
+  f=$(printf '%s' "$input" | "$JQ" -r '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null)
   [ -n "$f" ] || return 0
   [ -n "$PY" ] || block "python3 tidak ditemukan, guard tidak bisa memeriksa path."
   f=$(join_path "$(expand_home "$f")" "$cwd")
+  if [ -n "$AUDIT" ]; then
+    in_audit_dir "$f" || audit_block "edit file di luar folder kerja audit ${TMPDIR:-/tmp}/audit/ ($f)"
+    return 0
+  fi
   d=$("$PY" -c 'import os,sys; print(os.path.dirname(os.path.realpath(sys.argv[1])))' "$f") || return 0
   while [ ! -d "$d" ] && [ "$d" != / ]; do d=$(dirname "$d"); done  # new file: nearest existing parent
   pd=$(git -C "$d" rev-parse --absolute-git-dir 2>/dev/null) || return 0  # not in a git repo
@@ -270,9 +337,32 @@ input=$(cat)
 tool=$(printf '%s' "$input" | "$JQ" -r '.tool_name // empty' 2>/dev/null) || exit 0
 cwd=$(printf '%s' "$input" | "$JQ" -r '.cwd // empty' 2>/dev/null)
 [ -n "$cwd" ] || cwd=$PWD
+
+# read-only audit mode (/audit-issue): env AGENT_AUDIT=1 (worker panes), or bin/audit-mode.sh marked
+# one of our ancestor pids, i.e. the Claude session running this hook (SPV)
+# shortcut: shell writes (sed -i, > file) are not caught in audit mode; upgrade with a sandbox if agents start writing via shell
+AUDIT=''
+if [ "${AGENT_AUDIT:-}" = 1 ]; then
+  AUDIT=1
+else
+  mk=${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/audit p=$$
+  if [ -d "$mk" ]; then
+    for _ in 1 2 3 4 5 6 7 8; do
+      [ -f "$mk/$p" ] && { AUDIT=1; break; }
+      p=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+      [ -n "$p" ] && [ "$p" -gt 1 ] || break
+    done
+  fi
+fi
+
 case $tool in
   Bash) check_Bash;;
-  Edit|Write|MultiEdit) check_edit;;
-  mcp__claude_ai_Atlassian__transitionJiraIssue) check_jira;;
+  Edit|Write|MultiEdit|NotebookEdit) check_edit;;
+  mcp__claude_ai_Atlassian__*)
+    if [ -n "$AUDIT" ]; then
+      case $tool in *__create*|*__edit*|*__add*|*__update*|*__transition*) audit_block "$tool";; esac
+    elif [ "$tool" = mcp__claude_ai_Atlassian__transitionJiraIssue ]; then
+      check_jira
+    fi;;
 esac
 exit 0
