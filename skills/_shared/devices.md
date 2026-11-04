@@ -1,14 +1,14 @@
 # Device dan screenshot
 
-Aturan utama: **satu device, satu agen, satu waktu.** **Virtual dulu** (simulator/emulator); virtual penuh baru ke device fisik. Maks 3 device virtual menyala bersamaan. Fitur yang butuh hardware asli langsung device fisik (lihat "Kapan wajib device fisik").
+Aturan utama: **satu device, satu agen, satu waktu.** **Virtual dulu** (simulator/emulator); virtual penuh baru ke device fisik. Satu device virtual menyala per platform. Fitur yang butuh hardware asli langsung device fisik (lihat "Kapan wajib device fisik").
 
 ## Device yang ada
-| Device | Prioritas |
-|---|---|
-| Simulator iPhone | utama untuk iOS |
-| Emulator Android | utama untuk Android |
-| iPhone fisik (USB) | iOS: virtual penuh, atau fitur butuh hardware asli |
-| HP Android fisik (USB, izin debugging aktif) | Android: virtual penuh, atau fitur butuh hardware asli |
+Per platform: **1 virtual + 1 fisik**, jadi paling banyak 2 agen memakai device per platform bersamaan.
+
+| Platform | Virtual (utama) | Fisik (virtual penuh, atau butuh hardware asli) |
+|---|---|---|
+| iOS | 1 simulator iPhone | iPhone 13 Pro (USB) |
+| Android | 1 emulator (`Medium_Phone_API_37.0`) | HP Android (USB, izin debugging aktif) |
 
 ## Kapan wajib device fisik
 Pakai `device-pick.sh <platform> <owner> --physical` bila yang diuji butuh salah satu ini:
@@ -34,7 +34,7 @@ fi
 # lepas setelah selesai (panggilan lain, dev ditulis literal)
 AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release ios:<udid> PROJ-1234-qa1
 ```
-- `device-pick.sh <ios|android> <owner>`: virtual yang sudah menyala → boot virtual baru (jika < 3) → device fisik yang bebas. Tambah `--physical` = hanya device fisik. Exit 1 = tidak ada yang bebas: tunggu lalu coba lagi, jangan pakai device lain.
+- `device-pick.sh <ios|android> <owner>`: virtual yang sudah menyala → boot virtual bila belum ada yang menyala di platform itu → device fisik yang bebas. Tambah `--physical` = hanya device fisik. Exit 1 = tidak ada yang bebas: tunggu lalu coba lagi, jangan pakai device lain.
 - `device-lock.sh who <resource>`: lihat pemilik kunci.
 - Kunci milik proses yang sudah mati otomatis dianggap bebas.
 - Owner = `<KODE>-<peran><n>`, mis. `PROJ-1234-qa1`.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: device-pick.sh <ios|android> <owner> [--physical]
 # Prints the acquired resource (ios:<udid> | android:<serial>); exit 1 if none.
-# Default order: running virtual -> boot new virtual (if <3 virtual running) -> connected physical.
+# Default order: running virtual -> boot new virtual (if this platform has <MAX_VIRTUAL running) -> connected physical.
 # --physical (feature needs real hardware, e.g. APNs): connected physical only, never virtual.
 # Env: ADB, XCRUN, EMULATOR (command overrides for tests); PICK_BOOT_TIMEOUT (seconds, default 180)
 # for emulator boot and for waiting on the global boot lock; AGENT_LOCK_PID: see device-lock.sh.
@@ -10,7 +10,7 @@ ADB=${ADB:-adb} XCRUN=${XCRUN:-xcrun} EMULATOR=${EMULATOR:-emulator}
 TMO=${PICK_BOOT_TIMEOUT:-180}
 LOCK="$(dirname "$0")/device-lock.sh"
 export AGENT_LOCK_PID=${AGENT_LOCK_PID:-$PPID}
-MAX_VIRTUAL=3
+MAX_VIRTUAL=1 # per platform: the Mac has one simulator and one emulator in rotation
 usage() { echo "usage: $0 <ios|android> <owner> [--physical]" >&2; exit 2; }
 case $plat in ios|android) ;; *) usage ;; esac
 case $mode in ''|--physical) ;; *) usage ;; esac
@@ -32,7 +32,7 @@ boot_lock() {
   AGENT_LOCK_PID=$$ wait_for "$LOCK" acquire picker:boot "pick-$$" >/dev/null || fail_boot "timeout waiting for boot lock"
   trap '"$LOCK" release picker:boot "pick-$$"' EXIT
 }
-running() { echo $(( $(adb_serials | grep -c '^emulator-') + $(sims Booted "" | grep -c .) )); }
+running() { case $plat in android) adb_serials | grep -c '^emulator-';; ios) sims Booted "" | grep -c .;; esac; }
 
 new_emulator() { new=$(adb_serials | grep '^emulator-' | grep -vxF "$before" | head -1); [ -n "$new" ]; }
 booted() { [ "$("$ADB" -s "$new" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; }
@@ -40,7 +40,7 @@ booted() { [ "$("$ADB" -s "$new" shell getprop sys.boot_completed 2>/dev/null | 
 physical() {
   case $plat in
     android) for s in $(adb_serials | grep -v '^emulator-'); do try "android:$s"; done ;;
-    ios) for u in $("$XCRUN" devicectl list devices 2>/dev/null | grep ' connected ' \
+    ios) for u in $("$XCRUN" devicectl list devices 2>/dev/null | grep ' connected .* physical' \
         | sed -n 's/.*[[:space:]]\([0-9A-Fa-f-]\{20,\}\) (UDID).*/\1/p'); do try "ios:$u"; done ;;
   esac
 }

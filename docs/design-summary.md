@@ -60,7 +60,7 @@ Contoh: hotfix/v1.0.2 dari master; fix/PROJ-101 & fix/PROJ-105 masing2 MR ke hot
 Periksa dulu lalu tanya: bandingkan master, develop, versi live; lapor dengan saran; jawaban dicatat di CLAUDE.md project.
 
 ## Device, akun uji, nomor build
-Satu device, satu agen, satu waktu. Virtual dulu: 6 simulator iPhone, 1 emulator Android; iPhone 13 Pro dan HP Android fisik (perlu izin USB) bila virtual penuh atau fitur butuh hardware asli (APNs, kamera, NFC, …). Maks 2-3 virtual sekaligus; antre.
+Satu device, satu agen, satu waktu. Per platform 1 virtual + 1 fisik. Virtual dulu: 1 simulator iPhone, 1 emulator Android; iPhone 13 Pro dan HP Android fisik (perlu izin USB) bila virtual sedang dipakai atau fitur butuh hardware asli (APNs, kamera, NFC, …). Semua terpakai → antre.
 Akun uji dari local.properties (qa.*) atau .env/.xcconfig gitignored; belum ada -> sarankan qa.local.properties (template qa.env, qa.user1.phone/password, qa.user2..., qa.api.baseUrl). Wajib di .gitignore; isi tidak pernah ditulis ke Docs/Jira/MR. Satu akun satu agen pada satu waktu.
 Data uji hanya dev/staging, awalan kode tiket.
 Nomor build: Dev = angka tiket (PROJ-1234 -> 1234); Beta/Prod = terakhir+1, sumber App Store Connect API (jika ada key .p8), Firebase, tag git, file project; tidak cocok/tidak ketemu -> tanya dengan saran; nomor terkonfirmasi dicatat di CLAUDE.md project. Dev pakai ID aplikasi terpisah (.dev).

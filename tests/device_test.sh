@@ -65,11 +65,12 @@ printf 'emulator-5554\tdevice\n' > "$S/adb.after"
 assert_eq "android:emulator-5554" "$(pick android O1)" "unauthorized skipped, virtual booted"
 rm -f "$S/booted"; rm -rf "$AGENT_LOCK_DIR"
 
-# another emulator already online+locked: wait-for-device must not be trusted, new serial found
+# one virtual per platform: the only emulator busy -> no second boot
 printf 'List of devices attached\nemulator-5554\tdevice\n' > "$S/adb.out"
 printf 'emulator-5556\tdevice\n' > "$S/adb.after"
 "$L" acquire android:emulator-5554 X >/dev/null
-assert_eq "android:emulator-5556" "$(pick android O1)" "new serial picked, not the old one"
+assert_exit 1 "virtual busy, no physical -> exit 1" -- "$P" android O1
+[ ! -f "$S/booted" ]; assert_eq 0 "$?" "no second emulator booted"
 assert_eq "" "$("$L" who picker:boot)" "boot lock released"
 # boot timeouts release the lock
 rm -f "$S/booted"; rm -rf "$AGENT_LOCK_DIR"; : > "$S/adb.after"; printf "List of devices attached\n" > "$S/adb.out"
@@ -97,21 +98,29 @@ assert_exit 2 "unknown flag -> usage" -- "$P" android O3 --fisik
 # iOS physical (table form) and simulator
 printf 'Name Hostname Identifier State Model Reality\n------ -- ---\niPhone              00008110-000A51890E45801E (UDID)       connected   iPhone 13 Pro (iPhone14,2)   physical\n' > "$S/ctl.out"
 assert_eq "ios:00008110-000A51890E45801E" "$(pick ios O1)" "ios physical"
+rm -rf "$AGENT_LOCK_DIR"
+# devicectl also lists booted simulators as "connected ... simulated": never physical
+printf 'Name Hostname Identifier State Model Reality\n------ -- ---\niPhone 17           953CB416-9484-4B15-95A5-095A7BE5AA5B (UDID)   connected   iPhone 17 (iPhone18,3)       simulated\n' > "$S/ctl.out"
+assert_exit 1 "simulated device is not physical" -- "$P" ios O1 --physical
 : > "$S/ctl.out"
 echo '{"devices":{"rt":[{"udid":"SIM-1","name":"iPhone 15","state":"Shutdown"},{"udid":"IPAD","name":"iPad","state":"Shutdown"}]}}' > "$S/sim.json"
 rm -rf "$AGENT_LOCK_DIR"; printf 'List of devices attached\n' > "$S/adb.out"
 assert_eq "ios:SIM-1" "$(pick ios O1)" "ios simulator booted"
 assert_eq "SIM-1" "$(cat "$S/simboot")" "simctl boot called"
 
-# cap: 3 virtual running, all locked -> exit 1, no boot
+# cap is per platform: busy emulator does not stop an iOS simulator boot
 rm -rf "$AGENT_LOCK_DIR" "$S/simboot"
-printf 'List of devices attached\nemulator-5554\tdevice\nemulator-5556\tdevice\nemulator-5558\tdevice\n' > "$S/adb.out"
-for s in 5554 5556 5558; do "$L" acquire "android:emulator-$s" X >/dev/null; done
-assert_exit 1 "3 virtual all locked -> none" -- "$P" android O1
-assert_exit 1 "cap counts across platforms" -- "$P" ios O1
-[ ! -f "$S/simboot" ]; assert_eq 0 "$?" "no boot at cap"
-# cap reached, physical free -> physical as fallback
-printf 'List of devices attached\nRRCW903V5RB\tdevice\nemulator-5554\tdevice\nemulator-5556\tdevice\nemulator-5558\tdevice\n' > "$S/adb.out"
+printf 'List of devices attached\nemulator-5554\tdevice\n' > "$S/adb.out"
+"$L" acquire android:emulator-5554 X >/dev/null
+assert_exit 1 "android virtual busy -> none" -- "$P" android O1
+assert_eq "ios:SIM-1" "$(pick ios O1)" "ios still boots its own simulator"
+# booted simulator busy -> no second simulator boot
+echo '{"devices":{"rt":[{"udid":"SIM-1","name":"iPhone 17","state":"Booted"},{"udid":"SIM-2","name":"iPhone 18","state":"Shutdown"}]}}' > "$S/sim.json"
+rm -f "$S/simboot"
+assert_exit 1 "ios virtual busy -> none" -- "$P" ios O2
+[ ! -f "$S/simboot" ]; assert_eq 0 "$?" "no second simulator booted"
+# virtual full, physical free -> physical as fallback
+printf 'List of devices attached\nRRCW903V5RB\tdevice\nemulator-5554\tdevice\n' > "$S/adb.out"
 assert_eq "android:RRCW903V5RB" "$(pick android O1)" "no virtual free -> physical fallback"
 
 exit $FAILS
