@@ -198,14 +198,14 @@ check_orca() {
   case "$1 ${2:-}" in
     'repo add'|'project setup-'*) block "orca $1 $2 dilarang: agen tidak membuat project/repo Orca baru. Minta user.";;
     'worktree create') [ -n "$AUDIT" ] && audit_block "orca worktree create";;
-    'terminal split') block "orca terminal split langsung dilarang: buka panel worker lewat \"\$AGENT_WORKFLOW_DIR/bin/worker-pane.sh\" open \"<Nama> (<Label><n>)\" \"<command>\" supaya panel bernama sama dipakai ulang (rules.md, Orkestrasi).";;
-    'terminal create'|'agent launch') block "orca $1 $2 dilarang: membuka tab baru. Pakai panel split: orca terminal split --terminal \"\$ORCA_TERMINAL_HANDLE\" (rules.md, Orkestrasi).";;
-    'orchestration worker-start') case " $* " in *' --agent '*|*' --agent='*) block "worker-start --agent dilarang: membuka tab baru. Split panel dulu, lalu worker-start --terminal <handle panel> (rules.md, Orkestrasi).";; esac;;
+    'terminal split') block "orca terminal split dilarang: agen tambahan = teammate (tool Agent dengan name \"<Nama>-<Label><n>\"); panelnya dibuka Claude Code otomatis (rules.md, Orkestrasi).";;
+    'terminal create'|'agent launch') block "orca $1 $2 dilarang: membuka tab baru. Agen tambahan = teammate (tool Agent dengan name), tampil sebagai panel split (rules.md, Orkestrasi).";;
+    'orchestration worker-start') case " $* " in *' --agent '*|*' --agent='*) block "worker-start --agent dilarang: membuka tab baru. Agen tambahan = teammate (tool Agent dengan name) (rules.md, Orkestrasi).";; esac;;
   esac
   for a; do
     case $a in
       --no-parent|new-child|new-top-level|--worktree=new-child|--worktree=new-top-level)
-        block "orca $a dilarang: semua agen bekerja di workspace domain (worker-start --worktree current). Lihat rules.md.";;
+        block "orca $a dilarang: semua agen bekerja di workspace domain (teammate di workspace ini). Lihat rules.md.";;
     esac
   done
 }
@@ -343,8 +343,10 @@ tool=$(printf '%s' "$input" | "$JQ" -r '.tool_name // empty' 2>/dev/null) || exi
 cwd=$(printf '%s' "$input" | "$JQ" -r '.cwd // empty' 2>/dev/null)
 [ -n "$cwd" ] || cwd=$PWD
 
-# read-only audit mode (/audit-issue): env AGENT_AUDIT=1 (worker panes), or bin/audit-mode.sh marked
-# one of our ancestor pids, i.e. the Claude session running this hook (SPV)
+# read-only audit mode (/audit-issue): env AGENT_AUDIT=1, or bin/audit-mode.sh marked one of our
+# ancestor pids, i.e. the Claude session running this hook (SPV). The SPV's guard records
+# session-<session_id> -> pid so its teammates (agent teams, not our descendants; their Claude runs
+# with --parent-session-id) are audit too while that pid marker exists.
 # shortcut: shell writes (sed -i, > file) are not caught in audit mode; upgrade with a sandbox if agents start writing via shell
 AUDIT=''
 if [ "${AGENT_AUDIT:-}" = 1 ]; then
@@ -353,8 +355,19 @@ else
   mk=${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/audit p=$$
   if [ -d "$mk" ]; then
     for _ in 1 2 3 4 5 6 7 8; do
-      [ -f "$mk/$p" ] && { AUDIT=1; break; }
-      p=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+      if [ -f "$mk/$p" ]; then
+        AUDIT=1
+        sid=$(printf '%s' "$input" | "$JQ" -r '.session_id // empty' 2>/dev/null)
+        [ -n "$sid" ] && echo "$p" > "$mk/session-$sid"
+        break
+      fi
+      read -r pp cmd < <(ps -o ppid=,command= -p "$p" 2>/dev/null)
+      case $cmd in *' --parent-session-id '*)
+        sid=${cmd#* --parent-session-id }; sid=${sid%% *}
+        lead=$(cat "$mk/session-$sid" 2>/dev/null)
+        [ -n "$lead" ] && [ -f "$mk/$lead" ] && { AUDIT=1; break; } ;;
+      esac
+      p=$pp
       [ -n "$p" ] && [ "$p" -gt 1 ] || break
     done
   fi

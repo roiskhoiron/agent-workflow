@@ -27,19 +27,15 @@ flowchart LR
 2. **Buat dokumen Claude Docs sekarang** (`mcp__claude_ai_Claude_Docs__batch`): judul `Audit — <ringkasan permintaan>`, tanggal, satu blok `pending` per bagian "Laporan audit" (`report-format.md`). Kirim link-nya ke user. Dokumen ini juga laporan final; tidak ada dokumen kedua.
 3. **Pilih mode** (`--solo`/`--tim` memaksa; tanpa flag → permintaan satu platform dan sempit = solo, selain itu tim).
    - **Solo:** sesi ini menjalankan `auditor.md` lalu `analis.md` sendiri, berurutan.
-   - **Tim:** `orca orchestration run-create --objective "audit <slug>" --json`, per pertanyaan `task-create --run <run> --spec ... --task-title "<Nama> (<Label><n>)" --json`, lalu tiap worker:
-     ```
-     "$AGENT_WORKFLOW_DIR/bin/worker-pane.sh" open "<Nama> (<Label><n>)" "AGENT_AUDIT=1 claude --model $MODEL"   # → handle panel
-     orca orchestration worker-start --task <id> --terminal <handle panel> --worktree "id:$ORCA_WORKTREE_ID" --run <run> --json
-     ```
-     Nama dari tabel "Nama agen" di `rules.md`: Auditor (Cecep, Dadang, Sarip; satu per platform), Analis (Bu Lastri) bila ada lampiran, reproduksi memakai nama QA (Paijo, …) dengan `auditor.md`. Isi tugas: "Ikuti `~/.claude/agents/auditor.md`" (atau `analis.md`), slug, repo + ref versi, pertanyaan yang ditugaskan, jatah device/akun (`device-pick.sh <platform> audit-<slug>-<peran><n>`), path/link lampiran. Pantau dengan `orca orchestration check --run <run> --wait` dan `worker-read`. Panel yang tugasnya habis → `worker-pane.sh close "<nama>"`.
+   - **Tim:** tiap worker = **teammate** (tool Agent dengan `name: "<Nama>-<Label><n>"`, `subagent_type: auditor` atau `analis`, `model: opus`; `rules.md` → Orkestrasi). Teammate otomatis ikut hanya-baca selama mode audit sesi ini aktif (guard mengenali teammate dari sesi SPV-nya).
+     Nama dari tabel "Nama agen" di `rules.md`: Auditor (Cecep, Dadang, Sarip; satu per platform), Analis (Bu Lastri) bila ada lampiran, reproduksi memakai nama QA (Paijo, …) dengan `auditor.md`. Isi tugas: "Ikuti `~/.claude/agents/auditor.md`" (atau `analis.md`), slug, repo + ref versi, pertanyaan yang ditugaskan, jatah device/akun (`device-pick.sh <platform> audit-<slug>-<peran><n>`), path/link lampiran. Temuan datang lewat pesan teammate. Teammate yang tugasnya habis → hentikan.
 4. **Reproduksi** (bila permintaan menyangkut perilaku aplikasi): device + akun dev/staging sesuai `devices.md` dan `credentials.md`, pasang build yang **sudah ada** untuk versi itu (store/TestFlight/Firebase, cara memilih di `build-release.md`; tidak membangun sendiri, tidak ada → catat "tidak bisa direproduksi di versi itu"), Maestro lalu cadangan per platform (Android CLI → adb; iOS → XCUITest runner, `devices.md`), screenshot bertanda. Permintaan soal dokumen/desain saja → device tidak disentuh.
 5. **Simpulkan:** gabungkan temuan dari `${TMPDIR:-/tmp}/audit/<slug>/*.md`. Akar masalah + keyakinan (**pasti** / **kuat** / **dugaan**), dampak, perkiraan ukuran perbaikan. Klaim tanpa bukti ditulis sebagai dugaan, tidak sebagai fakta.
 6. **Laporan final:** isi semua blok `pending` di dokumen yang sama (`replace`), unggah screenshot, tambah saran tiket Jira (tidak dibuat). Tanpa kredensial.
-7. **Bersihkan & ringkas:** `worker-pane.sh close` semua panel worker, lepas kunci device/akun (`AGENT_LOCK_PID=$PPID ... device-lock.sh release ...`), lalu `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/audit-mode.sh" off` sebagai panggilan Bash tersendiri (guard memeriksa seluruh perintah sebelum `off` jalan). Di chat: link laporan + satu kalimat kesimpulan.
+7. **Bersihkan & ringkas:** hentikan semua teammate, lepas kunci device/akun (`AGENT_LOCK_PID=$PPID ... device-lock.sh release ...`), lalu `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/audit-mode.sh" off` sebagai panggilan Bash tersendiri (guard memeriksa seluruh perintah sebelum `off` jalan). Di chat: link laporan + satu kalimat kesimpulan.
 
 ## Berhenti lebih awal / galat
-Sebelum berhenti (tanya, galat, user membatalkan): minta worker berhenti dan tutup panelnya (`worker-pane.sh close`), lepas semua kunci, isi bagian dokumen yang sudah ada temuannya dan tandai sisanya belum selesai, lalu `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/audit-mode.sh" off`.
+Sebelum berhenti (tanya, galat, user membatalkan): hentikan semua teammate, lepas semua kunci, isi bagian dokumen yang sudah ada temuannya dan tandai sisanya belum selesai, lalu `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/audit-mode.sh" off`.
 
 ## Tidak pernah
 - Membuat, mengedit, mengomentari, atau memindah tiket Jira; menulis Confluence.

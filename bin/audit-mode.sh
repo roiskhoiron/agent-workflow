@@ -9,7 +9,9 @@ case ${1:-} in
   on)
     mkdir -p "$base"
     for f in "$base"/*; do
-      [ -e "$f" ] && ! kill -0 "${f##*/}" 2>/dev/null && rm -f "$f"
+      [ -e "$f" ] || continue
+      p=${f##*/}; case $p in session-*) p=$(cat "$f");; esac   # session-<id> holds the SPV pid (guard.sh)
+      kill -0 "$p" 2>/dev/null || rm -f "$f"
     done
     : > "$base/$pid" ;;
   off) rm -f "$base/$pid" ;;

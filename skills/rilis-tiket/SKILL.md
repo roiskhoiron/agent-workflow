@@ -3,7 +3,7 @@ name: rilis-tiket
 description: Jalankan rilis atau hotfix dari tiket Jira rilis (cek kondisi repo, branch release/hotfix di downstream, MR per tiket, cek manifest, build beta, satu MR ke upstream, komentar Jira). Dipanggil lewat `/rilis-tiket KODE-RILIS` atau `/rilis-tiket baru release|hotfix` dari worktree utama (primary) atau worktree domain Orca. Use when asked to cut a release or hotfix from a Jira release ticket; kata kunci - rilis tiket, buat rilis, hotfix, release request.
 argument-hint: KODE-RILIS | baru release|hotfix
 ---
-Jalankan satu rilis/hotfix (`$ARGUMENTS`). Sesi ini = **Release**: ikuti `~/.claude/agents/release.md`. Keputusan tingkat SPV (lanjut/berhenti, isi rilis) diserahkan ke user: di dalam run Orca lewat `orca orchestration gate-create --task <id> --question "<ringkasan + saran>" --options '["Ya","Tidak"]'`, di luar run lewat chat.
+Jalankan satu rilis/hotfix (`$ARGUMENTS`). Sesi ini = **Release**: ikuti `~/.claude/agents/release.md`. Keputusan tingkat SPV (lanjut/berhenti, isi rilis) diserahkan ke user lewat chat (ringkasan + satu saran).
 
 Baca dulu (jangan disalin ke sini): `~/.claude/skills/_agent-workflow-shared/rules.md`, `build-release.md`, `report-format.md`, `credentials.md`. Skrip: `$AGENT_WORKFLOW_DIR/bin/<skrip>` (`AGENT_WORKFLOW_DIR` diisi seperti di `rules.md`). Remote: `origin` = downstream (fork), `upstream` = repo utama.
 

@@ -33,8 +33,7 @@ Management (SPV, Validator, Reviewer, Release) memutuskan dan berbicara ke luar:
 - `rm -r`/`rm -rf` di luar folder project.
 - Memindah tiket Jira ke status yang tidak ada di `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit/Write file di worktree primary; berlaku untuk repo yang punya worktree tambahan (pola Orca).
-- Membuka terminal/agen di **tab baru** (`orca terminal create`, `orca agent launch`, `worker-start --agent`): agen tambahan selalu panel split.
-- `orca terminal split` langsung: panel worker hanya lewat `bin/worker-pane.sh` (pakai ulang panel bernama sama).
+- Membuka terminal/agen sendiri (`orca terminal split`, `orca terminal create`, `orca agent launch`, `worker-start --agent`): agen tambahan selalu **teammate** (lihat Orkestrasi).
 - Membuat project/repo/workspace Orca baru (`orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`).
 - `git worktree add` di luar folder sejajar checkout; `git worktree remove` selain worktree tiket `<repo>-<nomor>` atau dengan `--force`; `git worktree move`.
 
@@ -49,8 +48,8 @@ Jangan mencari jalan memutar. Jika diblokir, laporkan pesannya ke SPV/user.
 6. `build:heavy` dipakai tiket Jira lain: tunggu atau dahulukan tugas kita (cara di `devices.md` → Build berat).
 
 Cara tanya:
-- Di dalam run Orca: `orca orchestration gate-create --task <task_id> --question "<pertanyaan + saran>" --options '["Ya","Tidak"]'`, lalu tunggu `gate-resolve`.
-- Di luar Orca: tanya di chat dan tunggu jawaban.
+- Teammate: tanya ke SPV lewat SendMessage dan tunggu jawabannya; SPV yang bertanya ke user.
+- SPV/sesi utama: tanya di chat dan tunggu jawaban.
 
 ## Periksa dulu, lalu tanya
 Sebelum bertanya, kumpulkan fakta sendiri (git log, branch master/develop, versi live, file project). Ajukan pertanyaan dengan ringkasan temuan dan **satu saran**. Baca dulu `## Catatan agen` di `CLAUDE.md` project. Agen tidak menulis `CLAUDE.md` sendiri (worktree primary diblokir guard): jawaban user + temuan diberikan sebagai blok `## Catatan agen` siap tempel, untuk di-commit user sendiri ke `CLAUDE.md` project supaya tidak ditanya ulang. Kredensial tidak pernah dicatat.
@@ -60,7 +59,7 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 
 **Kenali domain:** `$ORCA_WORKTREE_ID` = workspace terminal ini; cari di `orca worktree list --json` (`id` sama) → `displayName` = domain, `path`, `isMainWorktree`. Jangan pakai `orca worktree current` untuk ini: ia mencari dari folder, jadi di workspace folder hasilnya root project. Tidak ketemu → tanya user nama domainnya.
 - **Root project** (`isMainWorktree: true`, mis. "Brighton RE"): hanya audit, tanya, dan `/rilis-tiket`.
-- **Domain** = workspace yang dibuka user. **Semua agen batch bekerja di dalam domain itu saja**: satu sesi (yolo) atau panel terbelah di workspace yang sama (panel split, lihat Orkestrasi; jangan tab baru).
+- **Domain** = workspace yang dibuka user. **Semua agen batch bekerja di dalam domain itu saja**: satu sesi (yolo) atau teammate yang tampil sebagai panel split di workspace yang sama (lihat Orkestrasi; jangan tab baru).
   - Domain git worktree (mis. BrightonChat "Manager"): kerja di checkout workspace itu.
   - Domain workspace folder (mis. Brighton RE "BAA"): checkout domain = `<path>/<repo>-<slug>` (slug = `displayName` huruf kecil, spasi → `-`; mis. `brighton-android-baa`, `brighton-ios-baa`). Belum ada → buat sejajar worktree lain repo itu: `git -C <worktree repo itu> worktree add ../<repo>-<slug> -b batch/<slug> <base>`, sebut di laporan.
   - Checkout domain tetap di **branch batch** (lokal saja). Tiap tiket punya **worktree tiket** sendiri sejajar checkout domain, `<repo>-<nomor>` (nomor = angka KODE, mis. `brighton-android-11135`): `git -C <checkout domain> worktree add ../<repo>-<nomor> -b <feature|fix|...>/<KODE> <base>`. Tulis path apa adanya, tanpa variabel (guard memeriksa teks perintah). Sudah ada → pakai, jangan buat ulang. Catat worktree yang dibuat batch ini di rencana Docs.
@@ -70,25 +69,15 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 - **Hapus worktree tiket** setelah tiket Ready To Review, hanya yang dibuat batch ini, bila `git -C <worktree> status --porcelain` kosong dan `git -C <worktree> log @{u}..` kosong (sudah di-push): `git -C <checkout domain> worktree remove ../<repo>-<nomor>` (tanpa `--force`; branch tetap ada). Syarat tidak terpenuhi → biarkan dan sebut di laporan. Checkout domain dan worktree buatan user tidak pernah dihapus.
 - **Dilarang (juga guard):** membuat project/repo/workspace Orca baru (`orca worktree create` dari `/develop-tiket` dan `/validate-tiket`, `orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`), worktree di folder sementara atau di luar folder project, `git worktree remove --force`, `git worktree move`. Pengecualian: `/rilis-tiket` membuat anak rilis dengan `orca worktree create --parent-worktree current`.
 
-Orkestrasi (SPV sebagai coordinator), tiap worker = **panel split** di terminal SPV, bukan tab baru. `worker-start --agent` selalu membuka tab sesuai setelan Orca, jadi jangan dipakai untuk worker; buat panelnya dulu, lalu serahkan ke `worker-start --terminal`:
-```
-orca orchestration run-create --objective "..." --json
-orca orchestration task-create --run <run> --spec "..." --task-title "..." --json
-# per worker: buka panel bernama, atau pakai ulang yang masih hidup (DIRECTION=vertical|horizontal selang-seling)
-"$AGENT_WORKFLOW_DIR/bin/worker-pane.sh" open "<Nama> (<Label><n>)" "claude --model <id sesuai peran>"   # → handle panel, mis. "Paijo (QA1)"
-orca orchestration worker-start --task <id> --terminal <handle panel> --worktree "id:$ORCA_WORKTREE_ID" --run <run> --json
-orca orchestration worker-read ...
-"$AGENT_WORKFLOW_DIR/bin/worker-pane.sh" close "<Nama> (<Label><n>)"   # peran itu tidak punya tugas lagi
-```
-**Panel worker: pakai ulang atau tutup.** Panel worker hanya lewat `worker-pane.sh` (guard memblokir `orca terminal split` langsung). Skrip mencari panel hidup berjudul sama di tab SPV; ada → dipakai ulang, tidak ada → split baru. Jadi tidak pernah ada dua `Maman (Programmer1)`.
-- Agen yang sama dapat tugas lanjutan (revisi dari Reviewer, tiket berikutnya untuk peran itu) → nama sama, panel lama dipakai ulang. Tugasnya untuk tiket lain → kirim `/clear` dulu: `orca terminal send --terminal <handle panel> --text "/clear" --enter`.
-- Panel masih sibuk dengan tugas sebelumnya → `open` gagal (timeout). Tunggu `worker_done`, atau pakai nama berikutnya untuk pekerjaan paralel.
-- Peran itu tidak punya tugas lagi di batch ini (Coder setelah lolos review dan, di `--batch`, di-merge ke branch batch, Reviewer setelah review terakhir, QA setelah laporannya diterima) → `close` saat itu juga, jangan dibiarkan terbuka.
-- Akhir batch atau berhenti lebih awal → `close` semua panel worker batch ini. Panel SPV sendiri dan panel lain tidak ditutup.
-Mode izin worker = mode sesi SPV (otonom → tambah `--permission-mode bypassPermissions` di `--command`). `--model` tidak boleh digabung dengan `--terminal`; model ditentukan di `--command`.
-Di isi tugas tiap worker, tulis: "Ikuti `~/.claude/agents/<peran>.md`" (mis. `coder.md`, `qa.md`).
+Orkestrasi (SPV sebagai lead): tiap worker = **teammate** Claude Code (agent teams). Orca menampilkannya sebagai panel split di tab SPV dengan label `@<nama>` tepat di atas kolom input; tidak ada panel atau tab yang dibuka sendiri.
+- **Syarat:** sesi SPV jalan dengan teammate mode: `claude --teammate-mode auto`, atau sekali di `/config` → Teammate mode = auto. Tool Agent tanpa parameter `name` = mode itu mati → tanya user: buka ulang sesi dengan teammate mode (saran), atau lanjut solo.
+- **Panggil:** tool Agent dengan `name: "<Nama>-<Label><n>"` (mis. `Paijo-QA1`, tabel di bawah), `subagent_type: <peran>` (`coder`, `reviewer`, `qa`, `release`, `auditor`, `analis`) dan `model` sesuai peran. Prompt: "Ikuti `~/.claude/agents/<peran>.md`" + tugas (kode tiket, worktree, batas file, jatah device/akun, folder laporan).
+- **Lapor & tanya:** teammate mengirim hasil dan pertanyaan ke SPV lewat SendMessage; pesan datang sendiri, tidak perlu dipantau. Pakai daftar tugas bersama tim untuk melacak tugas per tiket.
+- **Pakai ulang:** tugas lanjutan untuk agen yang sama (revisi dari Reviewer, tiket berikutnya untuk peran itu) → SendMessage ke nama yang sama, jangan panggil nama itu lagi; tugas tiket lain → minta dia mulai bersih dulu. Tidak pernah ada dua `Maman-Programmer1`. Pekerjaan paralel → nama berikutnya.
+- **Hentikan:** peran yang tidak punya tugas lagi di batch ini (Coder setelah lolos review dan, di `--batch`, di-merge ke branch batch; Reviewer setelah review terakhir; QA setelah laporannya diterima) → minta teammate itu berhenti (shutdown) saat itu juga; panelnya tertutup sendiri. Akhir batch atau berhenti lebih awal → hentikan semua teammate batch ini.
+- Mode izin teammate mengikuti sesi SPV.
 
-**Nama agen** (judul panel, `--task-title`, dan sapaan di laporan/komentar): nama Jawa/Sunda tetap per peran dan urutan, format `<Nama> (<Label><n>)`. Satu nama satu agen dalam satu batch; sisa kunci tetap `<KODE>-<peran><n>`.
+**Nama agen** (`name` teammate; di laporan/komentar ditulis `<Nama> (<Label><n>)`): nama Jawa/Sunda tetap per peran dan urutan, format `<Nama>-<Label><n>`. Satu nama satu agen dalam satu batch; sisa kunci tetap `<KODE>-<peran><n>`.
 | Peran | Label | Nama berurutan |
 |---|---|---|
 | SPV | SPV | Pak Darmo |
@@ -99,7 +88,7 @@ Di isi tugas tiap worker, tulis: "Ikuti `~/.claude/agents/<peran>.md`" (mis. `co
 | Release | Release | Sutini |
 | Auditor | Auditor | Cecep, Dadang, Sarip |
 | Analis | Analis | Bu Lastri |
-Contoh: `Maman (Programmer1)`, `Ujang (Programmer2)`, `Paijo (QA1)`, `Euis (QA2)`.
+Contoh: `Maman-Programmer1`, `Ujang-Programmer2`, `Paijo-QA1`, `Euis-QA2`.
 Di `/audit-issue`, worker reproduksi memakai nama QA (Paijo, Euis, Ningsih) tetapi mengikuti `auditor.md`.
 
 ## Git

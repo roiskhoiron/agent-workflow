@@ -40,7 +40,7 @@ Pilihan `/develop-tiket`:
 | Flag | Artinya |
 | --- | --- |
 | `--solo` | Satu agen mengerjakan semuanya |
-| `--tim` | SPV membagi kerja ke Coder, Reviewer, QA, Release di panel terpisah |
+| `--tim` | SPV membagi kerja ke Coder, Reviewer, QA, Release sebagai teammate (tiap agen panel sendiri) |
 | (tanpa `--solo/--tim`) | SPV memilih: satu tiket kecil = solo, selain itu tim |
 | `--batch` (default) | Semua tiket digabung: satu rencana, **satu build**, QA bersama di build itu. Proses berat jalan sekali untuk semua tiket |
 | `--separate` | Tiap tiket jalan sendiri: rencana, build, QA, laporan masing-masing |
@@ -124,7 +124,7 @@ Detail lengkap tiap langkah: `skills/<perintah>/SKILL.md`. Aturan bersama: [skil
 
 ## Tim agen
 
-| Agen | Nama panel | Model | Tugas | Tidak boleh |
+| Agen | Nama | Model | Tugas | Tidak boleh |
 | --- | --- | --- | --- | --- |
 | SPV | Pak Darmo | opus | bagi tugas, jatah device, putuskan selesai, publikasi laporan | menulis kode produk |
 | Validator | Kang Jajang | opus | `/validate-tiket` | menulis kode produk |
@@ -135,7 +135,9 @@ Detail lengkap tiap langkah: `skills/<perintah>/SKILL.md`. Aturan bersama: [skil
 | Auditor | Cecep, Dadang, Sarip | opus | `/audit-issue`: kode, log, reproduksi | menulis repo/Jira |
 | Analis | Bu Lastri | opus | `/audit-issue`: lampiran | menulis repo/Jira |
 
-Di mode tim, tiap agen tampil sebagai **panel split** di workspace yang sama (bukan tab baru), dengan judul seperti `Maman (Programmer1)`. Model tiap peran diubah di `agents/<peran>.md`.
+Di mode tim, tiap agen adalah **teammate** Claude Code (fitur *agent teams*). Orca menampilkannya sebagai **panel split** di workspace yang sama (bukan tab baru), dengan label seperti `@Maman-Programmer1` tepat di atas kolom input panel itu. Panel muncul sendiri saat SPV memanggil agen, dan tertutup sendiri saat agen dihentikan. Agen yang dapat tugas lanjutan dikirimi pesan, tidak dipanggil dua kali. Model tiap peran diubah di `agents/<peran>.md`.
+
+> **Syarat mode tim:** sesi utama harus jalan dengan teammate mode. Pilih salah satu: jalankan `claude --teammate-mode auto`, atau sekali saja di Claude Code ketik `/config` → **Teammate mode** → `auto`. Tanpa itu agen bertanya: buka ulang sesi, atau lanjut solo.
 
 ## Pagar keamanan
 
@@ -163,7 +165,6 @@ Agen memanggilnya sebagai `$AGENT_WORKFLOW_DIR/bin/<skrip>`. Kamu juga boleh men
 | `annotate.py` | Gambar kotak merah + label di screenshot dari koordinat | `uv run --with pillow python3 bin/annotate.py in.png boxes.json out.png` |
 | `build-number.sh` | Tentukan nomor build; exit 3 = sumber tidak sepakat, agen bertanya | `bin/build-number.sh next asc=41 firebase=41 tag=40` |
 | `manifest-check.sh` | Bandingkan tiket di commit branch rilis dengan manifest | `bin/manifest-check.sh origin/master origin/release/v1.2.0 PROJ-1 PROJ-2` |
-| `worker-pane.sh` | Buka/tutup panel agen bernama di tab SPV (pakai ulang panel yang sama) | `bin/worker-pane.sh open "Paijo (QA1)" "claude --model claude-sonnet-5-5"` |
 | `build-preempt.sh` | Saat `build:heavy` dipakai tiket lain: `info` (siapa, berapa lama, sedang upload?), `take` (hentikan build itu dan ambil kunci, setelah kamu setuju), `check` (agen yang dihentikan tahu harus build ulang) | `bin/build-preempt.sh info` |
 | `audit-mode.sh` | Nyalakan/matikan mode hanya-baca untuk `/audit-issue` | `AGENT_LOCK_PID=$PPID bin/audit-mode.sh status` |
 | `housekeeping.sh` | Bersihkan cache build tiap jam (dijalankan launchd, lihat bawah) | otomatis |
@@ -217,7 +218,7 @@ bin/ios-ui.sh <udid> steps.json /tmp/qa/PROJ-1234/xcui-1
 | Pact | Uji kontrak bila ada kontrak di repo |
 | `gh` / `glab` | Membuat PR (GitHub) / MR (GitLab) |
 | Firebase CLI / TestFlight | Upload build dev/beta; prod hanya dengan izin |
-| Orca CLI | Workspace, panel agen, orkestrasi tim |
+| Orca CLI | Workspace, worktree, panel teammate (lewat plugin agent view Orca) |
 | Atlassian MCP / Claude Docs MCP | Baca & komentar Jira / tulis laporan |
 
 ### MCP yang dipakai
@@ -244,7 +245,7 @@ Dijalankan launchd tiap jam (`com.agentworkflow.housekeeping`), dan dilewati bil
    uv tool install schemathesis
    brew tap pact-foundation/pact-ruby-standalone && brew install pact-legacy
    ```
-   Plus: Xcode (juga untuk XCUITest runner), Android SDK (`adb`, emulator, `android`), Claude Code, Orca.
+   Plus: Xcode (juga untuk XCUITest runner), Android SDK (`adb`, emulator, `android`), Claude Code, Orca. Untuk mode tim: `/config` → Teammate mode → `auto` (lihat [Tim agen](#tim-agen)).
 2. Plugin Claude Code: `superpowers` dan `ponytail` (lewat `/plugin`).
 3. Konektor claude.ai: **Atlassian** (Jira) dan **Claude Docs**.
 4. Login CLI: `gh auth login`, `glab auth login`, `firebase login`.
@@ -278,6 +279,7 @@ Tidak ikut repo (per komputer):
 | Gejala | Artinya / yang dilakukan |
 | --- | --- |
 | "DIBLOKIR oleh guard: ..." | Perintah melanggar pagar. Agen melaporkan pesannya, tidak mencari jalan memutar. Baca pesannya; biasanya menyebut cara yang benar |
+| "Teammate mode mati" / agen bertanya buka ulang sesi | Mode tim butuh teammate mode. Buka ulang Claude dengan `claude --teammate-mode auto` atau set `/config` → Teammate mode → `auto`, lalu ulangi perintah |
 | "Jalankan dari workspace domain" | `/develop-tiket` dijalankan dari root project. Buka workspace domain di Orca lalu ulangi |
 | "belum punya daftar transisi" | Project baru: agen menunjukkan daftar status, kamu pilih ID In Progress dan Ready To Review |
 | `device-pick.sh` exit 1 | Semua device sedang dipakai; agen menunggu lalu mencoba lagi |

@@ -45,7 +45,7 @@ Tiket kecil: satu agen, langkah 2 catatan singkat.
 
 ## /audit-issue
 - Untuk permintaan/keluhan tanpa tiket Jira, dengan lampiran opsional (mockup, PDF, gambar, link). Semua peran Opus.
-- Hanya-baca, dipaksa guard: `AGENT_AUDIT=1` di panel worker, `bin/audit-mode.sh on|off` untuk sesi SPV. Git hanya baca, Jira/Confluence tidak ditulis, edit file hanya di `${TMPDIR:-/tmp}/audit/`.
+- Hanya-baca, dipaksa guard: `bin/audit-mode.sh on|off` untuk sesi SPV; teammate-nya ikut hanya-baca (guard mengenali `--parent-session-id`); `AGENT_AUDIT=1` untuk sesi lain. Git hanya baca, Jira/Confluence tidak ditulis, edit file hanya di `${TMPDIR:-/tmp}/audit/`.
 - Hasil: satu dokumen Claude Docs (dibuat di awal, diisi sampai final) + saran tiket Jira yang tidak dibuat. Spec: `docs/superpowers/specs/2026-11-03-audit-issue-design.md`.
 
 ## Rilis dan hotfix
@@ -86,7 +86,7 @@ Terbuka: format judul versi rilis; peran Fable 5.1; API key ASC (opsional); izin
 
 ## Workspace Orca (A, cadangan C)
 - Root project (primary) → audit, tanya, `/rilis-tiket`.
-- Domain = workspace yang dibuka user; semua agen batch kerja di dalamnya (satu sesi atau panel terbelah), tanpa project/workspace Orca baru.
+- Domain = workspace yang dibuka user; semua agen batch kerja di dalamnya (satu sesi atau teammate agent teams, tampil sebagai panel split), tanpa project/workspace Orca baru.
 - Workspace folder (Brighton RE/Staff): checkout domain = folder `<repo>-<domain>`; belum ada → agen membuatnya.
 - Tiket = worktree tiket `<repo>-<nomor>` sejajar checkout domain, jalan paralel; MR per tiket. Agen menghapusnya setelah Ready To Review bila bersih dan sudah di-push. Nomor build dev batch = angka tiket pertama.
 - Tidak aman dibagi → solo (C). Guard: worktree hanya sejajar checkout, hapus hanya `<repo>-<nomor>` tanpa `--force`, tidak ada project/workspace Orca baru.

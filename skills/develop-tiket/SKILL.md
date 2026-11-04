@@ -29,22 +29,22 @@ flowchart LR
 3. **Rencana + test case** di Claude Docs (`mcp__claude_ai_Claude_Docs__batch`): `--batch`: satu dokumen untuk semua tiket; `--separate`: satu dokumen per tiket. TC per AC per tiket; TC yang butuh hardware asli ditandai `(fisik)` (`devices.md`). `--solo`/tiket kecil: catatan singkat cukup.
 4. **Pilih mode** (`--solo`/`--tim` memaksa; tanpa flag → SPV menilai: 1 tiket kecil = solo, selain itu tim). Tiap tiket di **worktree tiket** `<repo>-<nomor>` sejajar checkout domain, branch `feature/|fix/|hotfix/|docs/|chore/<KODE>` dari `<base>` (`rules.md` → Workspace & worktree); tiket berbeda jalan paralel, tiap tiket MR sendiri. Tidak ada project/workspace Orca baru.
    - **Solo:** SPV sendiri menjalankan peran Coder → Reviewer (review diff sendiri dengan daftar cek `reviewer.md`, catat di laporan bahwa review bukan independen) → QA → Release, berurutan, sesuai file perannya.
-   - **Tim:** `orca orchestration run-create --objective "develop <KODE...>" --json` → per tiket `task-create --run <run> --spec ... --task-title "<KODE> code"`, lalu tiap worker sebagai **panel split** di terminal SPV (`worker-pane.sh open "<Nama> (<Label><n>)" "claude --model <model>"` → `worker-start --task <id> --terminal <handle panel> --worktree "id:$ORCA_WORKTREE_ID" --run <run> --json`; panel bernama sama dipakai ulang, panel yang tugasnya habis ditutup dengan `worker-pane.sh close`; lengkapnya di `rules.md` → Orkestrasi; jangan `--agent`, itu membuka tab baru):
+   - **Tim:** tiap worker = **teammate** (tool Agent dengan `name: "<Nama>-<Label><n>"`, `subagent_type: <peran>`, `model` dari tabel); tampil sebagai panel split di tab SPV. Agen yang sama dipakai ulang lewat SendMessage, teammate yang tugasnya habis dihentikan; lengkapnya di `rules.md` → Orkestrasi. Teammate mode mati → tanya user (`rules.md`):
      | Peran | Model | Catatan |
      |---|---|---|
      | Coder | `claude-sonnet-5-5` | di worktree tiketnya; coder ke-2+ di tiket yang sama hanya bila file/modul terpisah, sebut batasnya di tugas |
      | Reviewer | `claude-opus-5-5` | bukan coder tiket itu; baca diff branch tiket |
      | QA (2-3) | `claude-sonnet-5-5` | uji build batch |
      | Release | `claude-haiku-5-5` | |
-     Coder tidak boleh `git checkout` branch lain atau pindah ke worktree tiket lain; path worktree disebut di tugas. Tidak aman dibagi → cadangan solo (`rules.md`). Isi tugas: "Ikuti `~/.claude/agents/<peran>.md`", kode tiket, AC/TC, branch, batas file, jatah device/akun, folder laporan. Pantau dengan `orca orchestration check --run <run> --wait` dan `worker-read --dispatch <id>`.
+     Coder tidak boleh `git checkout` branch lain atau pindah ke worktree tiket lain; path worktree disebut di tugas. Tidak aman dibagi → cadangan solo (`rules.md`). Isi tugas: "Ikuti `~/.claude/agents/<peran>.md`", kode tiket, AC/TC, branch, batas file, jatah device/akun, folder laporan. Laporan worker datang lewat pesan teammate.
 5. **Kode (TDD) → review:** Coder commit lokal di branch tiket (pesan menyebut KODE). Reviewer memeriksa performa/crash; temuan **wajib** (Critical/Important) → kembali ke Coder, review ulang sampai bersih.
 6. **Branch batch** (`--batch`; `--separate` lewati): di checkout domain, `git checkout <branch batch>` lalu `git merge --no-ff <branch tiket>` untuk tiap tiket yang lolos review. Konflik → berhenti dan tanya (sebut file dan tiketnya).
 7. **Build (oleh Release):** kunci `build:heavy` dulu (owner `<KODE-pertama>-release1`), lepas sesudahnya; build antre satu per satu. Dipegang tiket Jira lain → tanya user tunggu atau dahulukan (`devices.md` → Build berat).
    - `--batch`: **titik tunggu.** Build hanya setelah **semua** tiket lolos review dan di-merge, atau dikeluarkan dari batch (alasan tertulis di rencana). Satu build dari branch batch. Jangan build saat sebagian tiket masih dikerjakan.
    - `--separate`: satu build per tiket dari worktree tiketnya, begitu tiket itu lolos review.
    - Dev selalu: nomor = `build-number.sh dev <KODE batch, atau satu KODE di --separate>`; semua KODE build itu di catatan rilis Firebase.
-   - Beta: `build-number.sh next asc=… firebase=… tag=… project=…`; exit 3 → berhenti dan tanya (tim: `gate-create`).
-   - Prod: hanya lewat gate/izin eksplisit user, tidak pernah otomatis.
+   - Beta: `build-number.sh next asc=… firebase=… tag=… project=…`; exit 3 → berhenti dan tanya.
+   - Prod: hanya dengan izin eksplisit user, tidak pernah otomatis.
 8. **QA per tiket** di build dev (`--batch`: build batch, **dipasang sekali per device** lalu semua tiket diuji di sana; `--separate`: build tiket itu), folder `${TMPDIR:-/tmp}/qa/<KODE>/`:
    - SPV membagi jatah: per QA run, **satu** `device-pick.sh <ios|android> <KODE>-qa<n>` per platform (platform disebut di tugas), dipakai untuk semua TC run itu; TC `(fisik)` dapat QA run sendiri dengan `--physical`; akun lewat `device-lock.sh acquire account:qa.userN <KODE>-qa<n>`.
    - UI → Maestro + screenshot bertanda (iOS native/metrik UI → XCUITest runner); API → Schemathesis (dev/staging); kontrak → Pact. Spec/kontrak tidak ada di repo → TC itu Tertahan + tanya.
@@ -57,10 +57,10 @@ flowchart LR
 11. **Push + PR/MR (Release):** `git push origin <branch tiket>` (hanya `origin`, branch batch tidak di-push). Tujuan: ter-link tiket rilis → branch rilis di downstream; selain itu → upstream base `develop`/`CLAUDE.md`. `gh pr create` bila host remote GitHub, `glab mr create` bila GitLab (cek `git remote get-url`). Judul berisi KODE; isi ringkasan, link laporan, nomor build.
 12. **Komentar Jira** (`addCommentToJiraIssue`) per tiket: baris pertama link laporan, lalu link rencana, build dev/beta, PR/MR, ringkasan Lulus/Tertahan.
 13. **Transisi** ke Ready To Review (`transitionJiraIssue`, id dari `jira-transitions.json`). Tidak pernah Done.
-14. **Bersihkan & ringkas:** hapus worktree tiket buatan batch ini yang sudah Ready To Review (syarat di `rules.md`; tidak memenuhi → biarkan, sebut di ringkasan; tiket yang dikeluarkan dari batch tetap ditulis statusnya); tutup semua panel worker batch ini (`worker-pane.sh close`); pastikan semua kunci (device, akun, `build:heavy`, `checkout:*`) dilepas.
+14. **Bersihkan & ringkas:** hapus worktree tiket buatan batch ini yang sudah Ready To Review (syarat di `rules.md`; tidak memenuhi → biarkan, sebut di ringkasan; tiket yang dikeluarkan dari batch tetap ditulis statusnya); hentikan semua teammate batch ini; pastikan semua kunci (device, akun, `build:heavy`, `checkout:*`) dilepas.
 
    | KODE | Status | Laporan | Build | PR/MR |
    |---|---|---|---|---|
 
 ## Berhenti lebih awal / galat
-Sebelum berhenti (guard, tanya, galat, user membatalkan): lepas semua kunci milik batch ini (`AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release <resource> <owner>` untuk tiap device, `checkout:*`, `account:*`, `build:heavy`), minta worker tim melakukan hal sama lalu hentikan dan tutup panelnya (`worker-pane.sh close`), dan laporkan posisi terakhir per tiket. Pertanyaan wajib (`rules.md`): di dalam run pakai `orca orchestration gate-create --task <id> --question "<ringkasan + saran>" --options '["Ya","Tidak"]'`; di solo tanya di chat.
+Sebelum berhenti (guard, tanya, galat, user membatalkan): lepas semua kunci milik batch ini (`AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release <resource> <owner>` untuk tiap device, `checkout:*`, `account:*`, `build:heavy`), minta teammate melakukan hal sama lalu hentikan mereka, dan laporkan posisi terakhir per tiket. Pertanyaan wajib (`rules.md`): SPV tanya di chat dengan ringkasan + saran; teammate bertanya lewat SPV.

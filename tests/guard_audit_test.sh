@@ -82,6 +82,19 @@ assert_eq 2 "$(run "$(jq -cn --arg d "$W" '{tool_name:"Bash",tool_input:{command
 rm "$T/st/audit/$$"; : > "$T/st/audit/999999"
 assert_eq 0 "$(run "$(jq -cn --arg d "$W" '{tool_name:"Bash",tool_input:{command:"git commit -m x"},cwd:$d}')")" "[0] dead-pid marker ignored"
 
+# agent teams: the audit SPV's guard records its session; teammates (--parent-session-id) inherit audit
+: > "$T/st/audit/$$"
+run "$(jq -cn --arg d "$W" '{tool_name:"Bash",tool_input:{command:"git log"},cwd:$d,session_id:"S2"}')" >/dev/null
+assert_eq "$$" "$(cat "$T/st/audit/session-S2" 2>/dev/null)" "SPV guard records session -> pid"
+rm "$T/st/audit/$$"
+sleep 60 & SP=$!; disown "$SP"; : > "$T/st/audit/$SP"; echo "$SP" > "$T/st/audit/session-S1"
+mate() { bash -c 'printf "%s" "$1" | "$2" >/dev/null 2>&1; echo $?' _ "$(jq -cn --arg d "$W" '{tool_name:"Bash",tool_input:{command:"git commit -m x"},cwd:$d}')" "$G" --parent-session-id "$1"; }
+assert_eq 2 "$(mate S1)" "[2] teammate of audit SPV: git commit"
+assert_eq 0 "$(mate S9)" "[0] teammate of other session"
+rm "$T/st/audit/$SP"
+assert_eq 0 "$(mate S1)" "[0] teammate after SPV audit off"
+kill "$SP" 2>/dev/null
+
 # normal mode unchanged
 tool_check 0 Write "$(jq -cn --arg p "$W/a.txt" '{file_path:$p}')" AGENT_AUDIT=
 tool_check 0 mcp__claude_ai_Atlassian__addCommentToJiraIssue '{"issueIdOrKey":"PROJ-1"}' AGENT_AUDIT=
