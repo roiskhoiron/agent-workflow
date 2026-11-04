@@ -157,7 +157,7 @@ Agen memanggilnya sebagai `$AGENT_WORKFLOW_DIR/bin/<skrip>`. Kamu juga boleh men
 
 | Skrip | Gunanya | Contoh |
 | --- | --- | --- |
-| `device-pick.sh` | Ambil device bebas: fisik dulu, lalu virtual yang menyala, lalu boot baru (maks 3 virtual) | `AGENT_LOCK_PID=$PPID bin/device-pick.sh ios PROJ-1234-qa1` → `ios:<udid>` |
+| `device-pick.sh` | Ambil device bebas: virtual yang menyala → boot virtual baru (maks 3) → device fisik bila virtual penuh. `--physical` = hanya fisik, untuk fitur yang butuh hardware asli | `AGENT_LOCK_PID=$PPID bin/device-pick.sh ios PROJ-1234-qa1` → `ios:<udid>` |
 | `device-lock.sh` | Kunci device/akun/checkout supaya satu benda dipakai satu agen | `bin/device-lock.sh who ios:<udid>` |
 | `ios-ui.sh` | Jalankan langkah uji iOS lewat XCUITest runner (lihat bawah) | `bin/ios-ui.sh <udid> steps.json out/` |
 | `annotate.py` | Gambar kotak merah + label di screenshot dari koordinat | `uv run --with pillow python3 bin/annotate.py in.png boxes.json out.png` |
@@ -181,6 +181,11 @@ Setiap kunci memakai `AGENT_LOCK_PID=$PPID` di perintah yang sama; kunci milik p
 | Build | `./gradlew` (flavor project) | `xcodebuild` |
 
 Urutan cadangan: coba Maestro sekali lagi setelah app di-restart → alat cadangan → kalau tetap gagal, TC ditandai **Tertahan** dengan alat yang dicoba dan error-nya.
+
+### Virtual atau fisik?
+**Virtual dulu** (simulator/emulator): lebih cepat, bisa 3 sekaligus, dan device fisik tetap bebas. Virtual penuh → otomatis pindah ke device fisik.
+
+Langsung **device fisik** (`--physical`) bila yang diuji butuh hardware asli: push notification APNs, kamera/scan QR, NFC, Bluetooth, sensor/GPS bergerak, SMS/telepon asli, biometrik/pembayaran, metrik performa, atau bug di model device tertentu. TC seperti ini ditandai `(fisik)` di rencana. Daftar lengkap: "Kapan wajib device fisik" di [skills/_shared/devices.md](skills/_shared/devices.md).
 
 ### XCUITest runner (iOS)
 Proyek Xcode kecil di `ios-runner/` yang mengendalikan app apa pun lewat bundle id, jadi repo app tidak disentuh. Dibangun otomatis sekali (± 30 detik), lalu dipakai ulang.

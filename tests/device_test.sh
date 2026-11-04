@@ -84,10 +84,15 @@ assert_exit 1 "boot lock busy -> exit 1" -- "$P" android O1
 rm -rf "$AGENT_LOCK_DIR"; rm -f "$S/booted"; : > "$S/adb.after"
 printf 'List of devices attached\n' > "$S/adb.out"
 
-# physical wins
+# virtual first; --physical only when the feature needs real hardware
 printf 'List of devices attached\nRRCW903V5RB\tdevice\nemulator-5554\tdevice\n' > "$S/adb.out"
-assert_eq "android:RRCW903V5RB" "$(pick android O1)" "physical preferred"
-assert_eq "android:emulator-5554" "$(pick android O2)" "next owner gets running virtual"
+assert_eq "android:emulator-5554" "$(pick android O1)" "running virtual preferred"
+assert_eq "android:RRCW903V5RB" "$(pick android O2 --physical)" "--physical gets physical"
+rm -rf "$AGENT_LOCK_DIR"
+assert_eq "android:RRCW903V5RB" "$(pick android O1 --physical)" "--physical skips free virtual"
+printf 'List of devices attached\nemulator-5554\tdevice\n' > "$S/adb.out"
+assert_exit 1 "--physical without physical -> exit 1, no virtual" -- "$P" android O3 --physical
+assert_exit 2 "unknown flag -> usage" -- "$P" android O3 --fisik
 
 # iOS physical (table form) and simulator
 printf 'Name Hostname Identifier State Model Reality\n------ -- ---\niPhone              00008110-000A51890E45801E (UDID)       connected   iPhone 13 Pro (iPhone14,2)   physical\n' > "$S/ctl.out"
@@ -105,5 +110,8 @@ for s in 5554 5556 5558; do "$L" acquire "android:emulator-$s" X >/dev/null; don
 assert_exit 1 "3 virtual all locked -> none" -- "$P" android O1
 assert_exit 1 "cap counts across platforms" -- "$P" ios O1
 [ ! -f "$S/simboot" ]; assert_eq 0 "$?" "no boot at cap"
+# cap reached, physical free -> physical as fallback
+printf 'List of devices attached\nRRCW903V5RB\tdevice\nemulator-5554\tdevice\nemulator-5556\tdevice\nemulator-5558\tdevice\n' > "$S/adb.out"
+assert_eq "android:RRCW903V5RB" "$(pick android O1)" "no virtual free -> physical fallback"
 
 exit $FAILS

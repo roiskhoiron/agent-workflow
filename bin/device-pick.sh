@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
-# Usage: device-pick.sh <ios|android> <owner>
+# Usage: device-pick.sh <ios|android> <owner> [--physical]
 # Prints the acquired resource (ios:<udid> | android:<serial>); exit 1 if none.
-# Order: connected physical -> running virtual -> boot new virtual (if <3 virtual running).
+# Default order: running virtual -> boot new virtual (if <3 virtual running) -> connected physical.
+# --physical (feature needs real hardware, e.g. APNs): connected physical only, never virtual.
 # Env: ADB, XCRUN, EMULATOR (command overrides for tests); PICK_BOOT_TIMEOUT (seconds, default 180)
 # for emulator boot and for waiting on the global boot lock; AGENT_LOCK_PID: see device-lock.sh.
-plat=$1 owner=$2
+plat=$1 owner=$2 mode=${3:-}
 ADB=${ADB:-adb} XCRUN=${XCRUN:-xcrun} EMULATOR=${EMULATOR:-emulator}
 TMO=${PICK_BOOT_TIMEOUT:-180}
 LOCK="$(dirname "$0")/device-lock.sh"
 export AGENT_LOCK_PID=${AGENT_LOCK_PID:-$PPID}
 MAX_VIRTUAL=3
+usage() { echo "usage: $0 <ios|android> <owner> [--physical]" >&2; exit 2; }
+case $plat in ios|android) ;; *) usage ;; esac
+case $mode in ''|--physical) ;; *) usage ;; esac
 JQ=; for j in /usr/bin/jq jq; do command -v "$j" >/dev/null 2>&1 && { JQ=$j; break; }; done
 [ -n "$JQ" ] || { echo "jq not found; cannot count virtual devices" >&2; exit 1; }
 
@@ -33,9 +37,20 @@ running() { echo $(( $(adb_serials | grep -c '^emulator-') + $(sims Booted "" | 
 new_emulator() { new=$(adb_serials | grep '^emulator-' | grep -vxF "$before" | head -1); [ -n "$new" ]; }
 booted() { [ "$("$ADB" -s "$new" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; }
 
+physical() {
+  case $plat in
+    android) for s in $(adb_serials | grep -v '^emulator-'); do try "android:$s"; done ;;
+    ios) for u in $("$XCRUN" devicectl list devices 2>/dev/null | grep ' connected ' \
+        | sed -n 's/.*[[:space:]]\([0-9A-Fa-f-]\{20,\}\) (UDID).*/\1/p'); do try "ios:$u"; done ;;
+  esac
+}
+
+if [ "$mode" = --physical ]; then
+  physical; echo "no physical $plat device available" >&2; exit 1
+fi
+
 case $plat in
   android)
-    for s in $(adb_serials | grep -v '^emulator-'); do try "android:$s"; done
     for s in $(adb_serials | grep '^emulator-'); do try "android:$s"; done
     boot_lock
     if [ "$(running)" -lt $MAX_VIRTUAL ]; then
@@ -50,8 +65,6 @@ case $plat in
       fi
     fi ;;
   ios)
-    for u in $("$XCRUN" devicectl list devices 2>/dev/null | grep ' connected ' \
-        | sed -n 's/.*[[:space:]]\([0-9A-Fa-f-]\{20,\}\) (UDID).*/\1/p'); do try "ios:$u"; done
     for u in $(sims Booted iPhone); do try "ios:$u"; done
     boot_lock
     if [ "$(running)" -lt $MAX_VIRTUAL ]; then
@@ -62,6 +75,6 @@ case $plat in
         "$LOCK" release "ios:$u" "$owner"
       done
     fi ;;
-  *) echo "usage: $0 <ios|android> <owner>" >&2; exit 2 ;;
 esac
+physical # virtual full or none: fall back to a free physical device
 echo "no device available for $plat" >&2; exit 1

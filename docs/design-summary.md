@@ -33,7 +33,7 @@ Selalu diblokir (permissions.deny): push ke remote `upstream` (branch, `--tags`,
 Selalu berhenti & bertanya: upload prod; sebelum buat branch rilis/hotfix; nomor build tidak jelas; kredensial tidak ditemukan; dua fix hotfix bentrok.
 
 ## /validate-tiket
-Meniru laporan contoh. Alur: baca tiket+komentar -> bug: reproduksi di device fisik dulu lalu emulator / fitur: cek requirement + kesiapan API/desain -> screenshot tiap langkah + kotak merah -> laporan Claude Docs -> komentar Jira (link laporan baris pertama) -> layak/ya dengan catatan: geser In Progress; tidak: tetap Todo.
+Meniru laporan contoh. Alur: baca tiket+komentar -> bug: reproduksi di device virtual dulu (fisik bila virtual penuh atau fitur butuh hardware asli) / fitur: cek requirement + kesiapan API/desain -> screenshot tiap langkah + kotak merah -> laporan Claude Docs -> komentar Jira (link laporan baris pertama) -> layak/ya dengan catatan: geser In Progress; tidak: tetap Todo.
 Laporan: Judul `Validasi KODE — judul`, tanggal, nama; Ringkasan tabel AC -> Lulus/Tertahan; Keputusan kalimat tebal + diagram + alasan; satu bagian per TC (langkah bernomor + screenshot); Temuan (data uji, commit diuji, checklist).
 Tanda screenshot: kotak merah + label merah teks putih berisi kode AC; posisi dari koordinat elemen di layar device (UI hierarchy), bukan ditebak.
 Keputusan parsial boleh; TC butuh device lebih dari tersedia = Tertahan.
@@ -60,7 +60,7 @@ Contoh: hotfix/v1.0.2 dari master; fix/PROJ-101 & fix/PROJ-105 masing2 MR ke hot
 Periksa dulu lalu tanya: bandingkan master, develop, versi live; lapor dengan saran; jawaban dicatat di CLAUDE.md project.
 
 ## Device, akun uji, nomor build
-Satu device, satu agen, satu waktu. iPhone 13 Pro fisik (prioritas iOS), HP Android fisik (prioritas Android, perlu izin USB), 6 simulator iPhone, 1 emulator Android. Maks 2-3 virtual sekaligus; antre.
+Satu device, satu agen, satu waktu. Virtual dulu: 6 simulator iPhone, 1 emulator Android; iPhone 13 Pro dan HP Android fisik (perlu izin USB) bila virtual penuh atau fitur butuh hardware asli (APNs, kamera, NFC, …). Maks 2-3 virtual sekaligus; antre.
 Akun uji dari local.properties (qa.*) atau .env/.xcconfig gitignored; belum ada -> sarankan qa.local.properties (template qa.env, qa.user1.phone/password, qa.user2..., qa.api.baseUrl). Wajib di .gitignore; isi tidak pernah ditulis ke Docs/Jira/MR. Satu akun satu agen pada satu waktu.
 Data uji hanya dev/staging, awalan kode tiket.
 Nomor build: Dev = angka tiket (PROJ-1234 -> 1234); Beta/Prod = terakhir+1, sumber App Store Connect API (jika ada key .p8), Firebase, tag git, file project; tidak cocok/tidak ketemu -> tanya dengan saran; nomor terkonfirmasi dicatat di CLAUDE.md project. Dev pakai ID aplikasi terpisah (.dev).

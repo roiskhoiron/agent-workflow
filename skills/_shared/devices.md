@@ -1,14 +1,24 @@
 # Device dan screenshot
 
-Aturan utama: **satu device, satu agen, satu waktu.** Device fisik dulu, lalu virtual. Maks 3 device virtual menyala bersamaan; sisanya antre.
+Aturan utama: **satu device, satu agen, satu waktu.** **Virtual dulu** (simulator/emulator); virtual penuh baru ke device fisik. Maks 3 device virtual menyala bersamaan. Fitur yang butuh hardware asli langsung device fisik (lihat "Kapan wajib device fisik").
 
 ## Device yang ada
 | Device | Prioritas |
 |---|---|
-| iPhone fisik (USB) | utama untuk iOS |
-| HP Android fisik (USB, izin debugging aktif) | utama untuk Android |
-| Simulator iPhone | cadangan iOS |
-| Emulator Android | cadangan Android |
+| Simulator iPhone | utama untuk iOS |
+| Emulator Android | utama untuk Android |
+| iPhone fisik (USB) | iOS: virtual penuh, atau fitur butuh hardware asli |
+| HP Android fisik (USB, izin debugging aktif) | Android: virtual penuh, atau fitur butuh hardware asli |
+
+## Kapan wajib device fisik
+Pakai `device-pick.sh <platform> <owner> --physical` bila yang diuji butuh salah satu ini:
+- Push notification asli: APNs (iOS), FCM di emulator tanpa Google Play.
+- Kamera / scan QR asli, NFC, Bluetooth, sensor gerak, GPS yang bergerak.
+- Telepon/SMS asli (OTP lewat SMS), jaringan seluler.
+- Biometrik asli, keychain/keystore hardware, pembayaran (Apple Pay/Google Pay).
+- Metrik performa (hitch/frame rate), bug yang tiket-nya menyebut model/OS device tertentu.
+
+Selain itu virtual. SPV menandai TC seperti ini `(fisik)` di rencana; Validator memutuskan dari isi tiket. Device fisik tidak ada atau sibuk → antre; tetap tidak ada → TC **Tertahan** dengan alasan, jangan diuji di virtual.
 
 ## Ambil dan lepas device
 SPV membagi jatah; agen hanya memakai device yang ia kunci sendiri.
@@ -24,7 +34,7 @@ fi
 # lepas setelah selesai (panggilan lain, dev ditulis literal)
 AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release ios:<udid> PROJ-1234-qa1
 ```
-- `device-pick.sh <ios|android> <owner>`: fisik → virtual yang sudah menyala → boot virtual baru (jika < 3). Exit 1 = tidak ada yang bebas: tunggu lalu coba lagi, jangan pakai device lain.
+- `device-pick.sh <ios|android> <owner>`: virtual yang sudah menyala → boot virtual baru (jika < 3) → device fisik yang bebas. Tambah `--physical` = hanya device fisik. Exit 1 = tidak ada yang bebas: tunggu lalu coba lagi, jangan pakai device lain.
 - `device-lock.sh who <resource>`: lihat pemilik kunci.
 - Kunci milik proses yang sudah mati otomatis dianggap bebas.
 - Owner = `<KODE>-<peran><n>`, mis. `PROJ-1234-qa1`.
