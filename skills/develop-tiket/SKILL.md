@@ -47,7 +47,7 @@ flowchart LR
    - Prod: hanya lewat gate/izin eksplisit user, tidak pernah otomatis.
 8. **QA per tiket** di build dev (`--batch`: build batch, **dipasang sekali per device** lalu semua tiket diuji di sana; `--separate`: build tiket itu), folder `${TMPDIR:-/tmp}/qa/<KODE>/`:
    - SPV membagi jatah: per QA run, **satu** `device-pick.sh <ios|android> <KODE>-qa<n>` per platform (platform disebut di tugas), dipakai untuk semua TC run itu; akun lewat `device-lock.sh acquire account:qa.userN <KODE>-qa<n>`.
-   - UI → Maestro + screenshot bertanda; API → Schemathesis (dev/staging); kontrak → Pact. Spec/kontrak tidak ada di repo → TC itu Tertahan + tanya.
+   - UI → Maestro + screenshot bertanda (iOS native/metrik UI → XCUITest runner); API → Schemathesis (dev/staging); kontrak → Pact. Spec/kontrak tidak ada di repo → TC itu Tertahan + tanya.
    - QA menulis `report.md` + `*.png` sesuai "Laporan uji"; Gagal → kembali ke langkah 5.
 9. **Putuskan selesai** (per tiket) hanya bila: semua TC AC **Lulus**, atau **Tertahan** dengan alasan tertulis; review tanpa temuan wajib; tes project lulus. Belum → ulangi 5–8 untuk tiket itu, dengan aturan:
    - `--batch`: **titik tunggu.** Perbaiki dan review semua tiket yang gagal dulu, merge ulang, lalu **satu** build ulang untuk batch; QA ulang tiket yang diperbaiki, tiket lain cukup cek singkat tidak rusak. Tidak ada build ulang per tiket.

@@ -31,7 +31,7 @@ Keputusan parsial boleh. TC yang butuh device lebih dari yang tersedia = **Terta
 
 ## Laporan uji (`/develop-tiket`)
 1. **Judul**: `Uji PROJ-1234 — judul singkat`, tanggal, nama user.
-2. **Ringkasan**: tabel TC → AC → Lulus/Gagal/Tertahan, plus jenis uji (Maestro / Schemathesis / Pact).
+2. **Ringkasan**: tabel TC → AC → Lulus/Gagal/Tertahan, plus jenis uji (Maestro / XCUITest / Schemathesis / Pact).
 3. **Keputusan**: kalimat tebal **Siap review** atau **Belum siap** + alasan.
 4. **Satu bagian per TC**: hasil di kalimat pertama, langkah bernomor, screenshot berurutan; untuk API/kontrak tampilkan tabel endpoint → hasil.
 5. **Temuan**: branch + commit, nomor build dev/beta + link distribusi, data uji, checklist tindak lanjut.
@@ -49,7 +49,7 @@ Satu dokumen per audit, dibuat di awal audit dengan blok `pending` per bagian, l
 8. **Cara audit**: versi/ref dan build yang diperiksa, device, alat yang dipakai, hal yang tidak bisa diperiksa (termasuk: guard tidak menangkap tulis lewat shell).
 
 ## Screenshot bertanda
-- Kotak merah + label merah teks putih, dibuat dengan `annotate.py` dari koordinat `maestro hierarchy` (cara lengkap: `devices.md`).
+- Kotak merah + label merah teks putih, dibuat dengan `annotate.py` dari koordinat `maestro hierarchy` atau `-frames.json` XCUITest (cara lengkap: `devices.md`).
 - Label = kode AC + penjelasan singkat, mis. `AC2 pesan galat tampil`.
 - Satu hal penting per kotak; nama file urut: `TC1-01.png`, `TC1-02.png`.
 

@@ -17,7 +17,7 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
 | Reviewer | opus (`claude-opus-5-5`) | performa & crash sebelum PR | review kode sendiri |
 | Release | haiku (`claude-haiku-5-5`) | nomor build, build+upload, PR/MR, komentar & geser tiket | Done, upload prod tanpa izin |
 | Coder | sonnet (`claude-sonnet-5-5`) | TDD di branch sendiri | Jira, push, upload, device di luar jatah |
-| QA | sonnet (`claude-sonnet-5-5`) | Maestro, Schemathesis, Pact di device | Jira, push, upload, device di luar jatah |
+| QA | sonnet (`claude-sonnet-5-5`) | Maestro, XCUITest, Schemathesis, Pact di device | Jira, push, upload, device di luar jatah |
 | Auditor | opus (`claude-opus-5-5`) | /audit-issue: kode, log, reproduksi | menulis repo/Jira |
 | Analis | opus (`claude-opus-5-5`) | /audit-issue: lampiran | menulis repo/Jira |
 

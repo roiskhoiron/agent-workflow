@@ -63,10 +63,54 @@ Selalu pakai serial dari `device-pick.sh` (`--device <serial>`); jangan sentuh d
 
 Langkah 2–3 bukan flow yang bisa diulang otomatis: tulis perintah persisnya di `$W/manual-steps.sh` dan sebut di laporan bahwa langkah itu di luar Maestro.
 
+## Pilih alat iOS: Maestro, XCUITest runner
+Padanan Android CLI di iOS = **XCUITest runner** (`$AGENT_WORKFLOW_DIR/bin/ios-ui.sh`): proyek kecil `ios-runner/` yang mengendalikan app mana pun lewat bundle id, tanpa menyentuh repo app. Pakai udid dari `device-pick.sh` (`ios:<udid>`).
+
+| Kebutuhan | Pertama | Jika terkendala |
+|---|---|---|
+| E2E, login/registrasi, alur chat, regresi fungsional, visual dasar | Maestro flow | XCUITest runner |
+| Inspeksi UI native (elemen yang tidak ada di `maestro hierarchy`) | XCUITest `hierarchy` | — |
+| Screenshot satu elemen | XCUITest `elementShot` | — |
+| Interaksi native: alert sistem, tekan lama | XCUITest `alert` / `longPress` | — |
+| Metrik UI: waktu buka app, kelancaran scroll | XCUITest `measure` | — |
+
+Baris 2–5 langsung pakai XCUITest, tidak menunggu Maestro gagal.
+
+**Maestro terkendala di iOS** (definisi sama dengan Android di atas):
+1. Ulang sekali setelah app di-restart.
+2. Tulis langkah yang sama di `steps.json`, jalankan `ios-ui.sh`.
+3. Gagal juga → TC **Tertahan**, tulis alat yang dicoba + error (`fail-step<N>.png`, pesan gagal di `run.xcresult`).
+
+### Menjalankan XCUITest runner
+```bash
+W=${TMPDIR:-/tmp}/qa/PROJ-1234
+cat > "$W/steps.json" <<'X'
+[{"launch":"com.app.dev"},
+ {"type":"PROJ-1234-user","into":{"id":"phone"}},
+ {"tap":{"label":"Masuk"}},
+ {"alert":"Allow"},
+ {"assert":{"text":"Beranda"},"timeout":15},
+ {"screenshot":"TC1-01"},
+ {"hierarchy":"TC1-02"},
+ {"elementShot":"TC1-03","of":{"id":"btnSave"}},
+ {"measure":"scroll","on":{"id":"chatList"}}]
+X
+"$AGENT_WORKFLOW_DIR/bin/ios-ui.sh" <udid> "$W/steps.json" "$W/xcui-1"   # folder output baru tiap run
+```
+- Aksi: `launch` (buka ulang app) / `activate` (lanjut dari layar sekarang, mis. sesudah Maestro), `tap`, `longPress` (+`duration`), `type` (+`into`), `swipe` up|down|left|right (+`on`), `assert`, `alert` (tombol alert sistem), `screenshot`, `elementShot` (+`of`), `hierarchy`, `measure` launch|scroll (maks satu per run).
+- Selector: `{"id": accessibilityIdentifier}`, `{"label": "persis"}`, `{"text": "mengandung"}`, opsional `index`. `timeout` (detik, default 10) per langkah.
+- Hasil: `<nama>.png`, `<nama>.txt` (pohon UI lengkap), `<nama>-frames.json` (elemen + kotak dalam piksel screenshot), `metrics/*.csv`, `run.xcresult`. Exit ≠ 0 = ada langkah gagal, lihat `fail-step<N>.png`.
+- Simulator tanpa signing. iPhone fisik butuh Team ID dari project app:
+  `IOS_TEAM=$(xcodebuild -showBuildSettings -project <App>.xcodeproj -scheme <Scheme> 2>/dev/null | awk '$1=="DEVELOPMENT_TEAM"{print $3; exit}') "$AGENT_WORKFLOW_DIR/bin/ios-ui.sh" ...` (CocoaPods: `-workspace <App>.xcworkspace`).
+- Runner dibangun sekali per tujuan (simulator / team) lalu dipakai ulang; build ulang otomatis bila `ios-runner/` berubah.
+- Hitch/frame rate scroll hanya keluar di iPhone fisik; simulator hanya durasi.
+- Simpan `steps.json` di folder kerja seperti flow Maestro, supaya bisa diulang.
+
 ## Kotak merah dari koordinat, bukan tebakan
 1. Saat layar yang mau ditandai tampil: `maestro --device <id> hierarchy > "$W/h.json"`.
 2. Ambil `bounds` elemen yang dimaksud (cari lewat `text`, `resource-id`, atau `accessibilityText`).
 3. iOS: bounds dalam *point*; kalikan dengan skala layar (lebar screenshot px ÷ lebar layar point, mis. 3). Android: bounds sudah piksel.
+   XCUITest: ambil kotak dari `<nama>-frames.json`, sudah piksel (tidak dikali skala).
 4. Tulis `boxes.json` lalu jalankan:
 ```bash
 W=${TMPDIR:-/tmp}/qa/PROJ-1234

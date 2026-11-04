@@ -19,7 +19,7 @@ Status: **v1 terpasang** — siap uji coba di tiket nyata.
    uv tool install schemathesis
    brew tap pact-foundation/pact-ruby-standalone && brew install pact-legacy
    ```
-   Plus: Xcode, Android SDK (`adb`, emulator), Claude Code, Orca.
+   Plus: Xcode (juga untuk XCUITest runner `ios-runner/`, dibangun otomatis oleh `bin/ios-ui.sh`), Android SDK (`adb`, emulator), Claude Code, Orca.
 2. Plugin Claude Code: `superpowers` dan `ponytail` (lewat `/plugin`).
 3. Konektor claude.ai: **Atlassian** (Jira) dan **Claude Docs**.
 4. Login CLI: `gh auth login`, `glab auth login`, `firebase login`.

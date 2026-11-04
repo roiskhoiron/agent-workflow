@@ -24,7 +24,7 @@ Hierarki: Kamu -> SPV -> Coder x2-5, QA x2-3; Coder -> Reviewer -> Release; QA -
 | Release | Haiku | nomor build, build+upload, PR/MR, komentar & geser tiket | Done, upload prod tanpa izin |
 | Housekeeping | Haiku | cache & branch lama | kode, data uji, kredensial |
 | Coder | Sonnet | TDD di branch sendiri | Jira, push, upload, device di luar jatah |
-| QA | Sonnet | Maestro, Schemathesis, Pact di device | Jira, push, upload, device di luar jatah |
+| QA | Sonnet | Maestro, XCUITest, Schemathesis, Pact di device | Jira, push, upload, device di luar jatah |
 Model diubah di ~/.claude/agents/<peran>.md.
 
 ## Mode kerja dan pagar
