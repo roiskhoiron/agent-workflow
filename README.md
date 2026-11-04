@@ -146,7 +146,7 @@ Di mode tim, tiap agen tampil sebagai **panel split** di workspace yang sama (bu
 - Edit file di worktree primary; membuka tab/workspace/project Orca baru; worktree di luar folder project.
 - Mode audit: semua penulisan ke repo, git remote, dan Jira.
 
-**Agen selalu berhenti dan bertanya** bila: upload ke prod, akan membuat branch rilis/hotfix, nomor build tidak jelas, kredensial tidak ditemukan, atau dua fix hotfix bentrok.
+**Agen selalu berhenti dan bertanya** bila: upload ke prod, akan membuat branch rilis/hotfix, nomor build tidak jelas, kredensial tidak ditemukan, dua fix hotfix bentrok, atau `build:heavy` sedang dipakai tiket Jira lain (kamu memilih: tunggu, atau dahulukan tugas ini).
 
 **Kredensial** dibaca dari file lokal (mis. `qa.local.properties`) dan tidak pernah ditulis ke Docs, Jira, atau MR. Data uji hanya di dev/staging, diawali kode tiket (mis. `PROJ-1234-user`).
 
@@ -164,6 +164,7 @@ Agen memanggilnya sebagai `$AGENT_WORKFLOW_DIR/bin/<skrip>`. Kamu juga boleh men
 | `build-number.sh` | Tentukan nomor build; exit 3 = sumber tidak sepakat, agen bertanya | `bin/build-number.sh next asc=41 firebase=41 tag=40` |
 | `manifest-check.sh` | Bandingkan tiket di commit branch rilis dengan manifest | `bin/manifest-check.sh origin/master origin/release/v1.2.0 PROJ-1 PROJ-2` |
 | `worker-pane.sh` | Buka/tutup panel agen bernama di tab SPV (pakai ulang panel yang sama) | `bin/worker-pane.sh open "Paijo (QA1)" "claude --model claude-sonnet-5-5"` |
+| `build-preempt.sh` | Saat `build:heavy` dipakai tiket lain: `info` (siapa, berapa lama, sedang upload?), `take` (hentikan build itu dan ambil kunci, setelah kamu setuju), `check` (agen yang dihentikan tahu harus build ulang) | `bin/build-preempt.sh info` |
 | `audit-mode.sh` | Nyalakan/matikan mode hanya-baca untuk `/audit-issue` | `AGENT_LOCK_PID=$PPID bin/audit-mode.sh status` |
 | `housekeeping.sh` | Bersihkan cache build tiap jam (dijalankan launchd, lihat bawah) | otomatis |
 
@@ -280,6 +281,7 @@ Tidak ikut repo (per komputer):
 | "Jalankan dari workspace domain" | `/develop-tiket` dijalankan dari root project. Buka workspace domain di Orca lalu ulangi |
 | "belum punya daftar transisi" | Project baru: agen menunjukkan daftar status, kamu pilih ID In Progress dan Ready To Review |
 | `device-pick.sh` exit 1 | Semua device sedang dipakai; agen menunggu lalu mencoba lagi |
+| "build:heavy sedang dipakai PROJ-1 — … Mana yang didahulukan?" | Mac hanya kuat satu build berat sekaligus. **Tunggu** = antre. **Dahulukan** = build tiket lain dihentikan dan diulang otomatis setelah build kita selesai (lebih cepat karena cache). Upload tidak pernah dihentikan |
 | `build-number.sh` exit 3 | Sumber nomor build tidak sepakat; agen bertanya dengan saran `max+1` |
 | TC **Tertahan** | Tidak bisa diuji (device kurang, spec tidak ada, semua alat gagal); alasannya tertulis di laporan |
 

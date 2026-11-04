@@ -135,3 +135,11 @@ Satu akun uji juga satu agen satu waktu. Kunci dengan skrip yang sama: `AGENT_LO
 
 ## Build berat
 Build iOS/Android dijalankan satu per satu (RAM terbatas). Kunci `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" acquire build:heavy <owner>` sebelum build, `release build:heavy <owner>` sesudahnya.
+
+**Kunci dipakai** (`acquire` exit 1, stdout = pemilik `<KODE>-<peran><n>`):
+- Pemilik dari batch/rilis yang sama (KODE-nya ada di daftar tiket kita) → antre: coba lagi tiap 30 detik, tanpa bertanya.
+- Pemilik **tiket Jira lain** → **tanya user** (juga di mode otonom), supaya user memilih prioritas:
+  1. `"$AGENT_WORKFLOW_DIR/bin/build-preempt.sh" info` → `owner=… since=<n>m uploading=yes|no`. Judul tiket pemilik dari `getJiraIssue <KODE pemilik>`.
+  2. Tanya (gate Orca atau chat, cara di `rules.md`): "`build:heavy` sedang dipakai **<KODE> — <judul>** (<jenis build>, sudah <n> menit). Tugas kita: **<KODE> — <judul>** (<jenis build>). Mana yang didahulukan?" Opsi: **Tunggu** / **Dahulukan <KODE kita>** (build <KODE> dihentikan, diulang otomatis sesudah build kita). `uploading=yes` → jangan tawarkan dahulukan; upload tidak pernah dihentikan, tunggu saja.
+  3. **Tunggu** → antre. **Dahulukan** → `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/build-preempt.sh" take <owner kita>`: exit 0 = kunci milik kita; 3 = keburu upload → tunggu; 1 = diambil agen lain → ulangi dari 1.
+- **Build kita terhenti/gagal:** sebelum menyebutnya gagal, jalankan `build-preempt.sh check <owner kita>`. Exit 0 = didahulukan tiket lain, bukan kegagalan: antre lagi, build ulang dari awal, dan tulis di laporan "build sempat didahulukan untuk <KODE>".

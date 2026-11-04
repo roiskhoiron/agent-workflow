@@ -46,6 +46,7 @@ Jangan mencari jalan memutar. Jika diblokir, laporkan pesannya ke SPV/user.
 3. Nomor build tidak jelas (`build-number.sh` keluar dengan kode 3).
 4. Kredensial tidak ditemukan.
 5. Dua fix hotfix bentrok.
+6. `build:heavy` dipakai tiket Jira lain: tunggu atau dahulukan tugas kita (cara di `devices.md` → Build berat).
 
 Cara tanya:
 - Di dalam run Orca: `orca orchestration gate-create --task <task_id> --question "<pertanyaan + saran>" --options '["Ya","Tidak"]'`, lalu tunggu `gate-resolve`.
