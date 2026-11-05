@@ -3,21 +3,26 @@
 #        build-preempt.sh take <new-owner>  -> user chose to put <new-owner> first: stop the holder's
 #                                              build, move build:heavy to <new-owner>, leave a note
 #        build-preempt.sh check <owner>     -> was <owner> preempted? prints the note once (exit 0), else 1
+#        build-preempt.sh reap              -> release a forgotten lock: no build/upload under the holder for
+#                                              REAP_MIN minutes (default 20) since acquire or last seen building;
+#                                              leaves a note like take (exit 0), else 1
+# shortcut: "last seen building" is only refreshed when reap/housekeeping runs, so a holder whose build ran
+# unobserved for >REAP_MIN can lose the lock in the gap between two build steps; upgrade with a build wrapper that touches seen
 # take exit: 0 lock is ours; 1 lock went to someone else meanwhile; 3 holder is uploading (never
 # interrupted: wait instead); 2 usage. Builds are stopped, not frozen (frozen builds keep their RAM).
-# Env: AGENT_LOCK_PID, AGENT_LOCK_DIR (see device-lock.sh); AGENT_WORKFLOW_STATE; PREEMPT_TIMEOUT (s, default 30)
+# Env: AGENT_LOCK_PID, AGENT_LOCK_DIR (see device-lock.sh); AGENT_WORKFLOW_STATE; PREEMPT_TIMEOUT (s, default 30); REAP_MIN
 cmd=$1 arg=$2
 LOCK="$(dirname "$0")/device-lock.sh" RES=build:heavy
 D="${AGENT_LOCK_DIR:-$HOME/.agent-workflow/locks}/build%3Aheavy"
 NOTES="${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/preempted"
-BUILD='xcodebuild|gradle' UPLOAD='firebase|appdistribution|altool|notarytool'
+BUILD='xcodebuild|gradle' UPLOAD='appdistribution|deployfirebase|altool|notarytool'
 export AGENT_LOCK_PID=${AGENT_LOCK_PID:-$PPID}
-usage() { echo "usage: $0 info | take <new-owner> | check <owner>" >&2; exit 2; }
+usage() { echo "usage: $0 info | take <new-owner> | check <owner> | reap" >&2; exit 2; }
 
 tree() { local c; for c in $(pgrep -P "$1"); do echo "$c"; tree "$c"; done; }
 matching() { # pattern -> pids under the holder's session whose command matches
   local p; for p in $(tree "$(cat "$D/pid" 2>/dev/null)"); do
-    ps -o command= -p "$p" 2>/dev/null | grep -qE "$1" && echo "$p"
+    ps -o command= -p "$p" 2>/dev/null | grep -qiE "$1" && echo "$p"
   done; }
 gone() { local p; for p in $1; do kill -0 "$p" 2>/dev/null && return 1; done; return 0; }
 wait_gone() { local i; for ((i = 0; i < ${PREEMPT_TIMEOUT:-30} * 5; i++)); do gone "$1" && return 0; sleep 0.2; done; return 1; }
@@ -41,6 +46,15 @@ case $cmd in
     mkdir -p "$NOTES" && echo "didahulukan oleh $arg pada $(date '+%Y-%m-%d %H:%M')" > "$NOTES/$old"
     "$LOCK" release "$RES" "$old"
     "$LOCK" acquire "$RES" "$arg" >/dev/null || { echo "kunci keburu diambil $("$LOCK" who "$RES")" >&2; exit 1; } ;;
+  reap)
+    o=$("$LOCK" who "$RES"); [ -n "$o" ] || exit 1
+    [ -n "$(matching "$BUILD|$UPLOAD")" ] && { touch "$D/seen"; exit 1; }
+    last=$(stat -f %m "$D" 2>/dev/null || date +%s)
+    s=$(stat -f %m "$D/seen" 2>/dev/null || echo 0); [ "$s" -gt "$last" ] && last=$s
+    idle=$(( ($(date +%s) - last) / 60 ))
+    [ "$idle" -ge "${REAP_MIN:-20}" ] || exit 1
+    mkdir -p "$NOTES" && echo "dilepas otomatis pada $(date '+%Y-%m-%d %H:%M'): tidak ada build selama $idle menit" > "$NOTES/$o"
+    "$LOCK" release "$RES" "$o" ;;
   check)
     [ -n "$arg" ] || usage
     [ -f "$NOTES/$arg" ] || exit 1

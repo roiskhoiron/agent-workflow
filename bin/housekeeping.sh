@@ -38,6 +38,7 @@ free_gb() { echo "${HK_FREE_GB:-$(df -g / | awk 'NR==2{print $4}')}"; }
 busy() {
   [ -n "${HK_BUSY:-}" ] && [ "$HK_BUSY" = 1 ] && return 0
   # only build:heavy counts: checkout/device/account locks belong to sessions left open for days
+  "$(dirname "$0")/build-preempt.sh" reap >/dev/null 2>&1 && log "released forgotten build:heavy"
   local d=${AGENT_LOCK_DIR:-$AW/locks}/build%3Aheavy pid
   if [ -d "$d" ]; then # same stale rule as device-lock.sh: dead pid, or no pid and >=10s old
     pid=$(cat "$d/pid" 2>/dev/null)

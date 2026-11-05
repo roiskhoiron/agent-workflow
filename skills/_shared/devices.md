@@ -134,9 +134,12 @@ uv run --with pillow python3 "$AGENT_WORKFLOW_DIR/bin/annotate.py" "$W/TC1-02.pn
 Satu akun uji juga satu agen satu waktu. Kunci dengan skrip yang sama: `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" acquire account:qa.user1 PROJ-1234-qa1` (exit 1 = dipakai agen lain, stdout = pemiliknya). Detail: `credentials.md`.
 
 ## Build berat
-Build iOS/Android dijalankan satu per satu (RAM terbatas). Kunci `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" acquire build:heavy <owner>` sebelum build, `release build:heavy <owner>` sesudahnya.
+Build iOS/Android dijalankan satu per satu (RAM terbatas). Kunci `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" acquire build:heavy <owner>` sebelum build, `release build:heavy <owner>` **segera** sesudah build/upload selesai, sebelum langkah lain (QA, laporan, menunggu user).
+- Ulangi `acquire` (aman untuk owner yang sama) tepat sebelum **tiap** perintah build. Gagal = kunci sudah dilepas otomatis atau diambil: ikuti "Kunci dipakai", lalu `build-preempt.sh check <owner>` untuk tahu sebabnya.
+- **Lepas otomatis:** kunci yang tidak dipakai build/upload apa pun selama 20 menit dilepas oleh `build-preempt.sh reap` (dijalankan housekeeping tiap jam dan oleh agen yang menunggu), dan pemegangnya mendapat catatan.
 
 **Kunci dipakai** (`acquire` exit 1, stdout = pemilik `<KODE>-<peran><n>`):
+- Pertama `"$AGENT_WORKFLOW_DIR/bin/build-preempt.sh" reap`: exit 0 = kunci terlupa sudah dilepas → `acquire` lagi, tanpa bertanya.
 - Pemilik dari batch/rilis yang sama (KODE-nya ada di daftar tiket kita) → antre: coba lagi tiap 30 detik, tanpa bertanya.
 - Pemilik **tiket Jira lain** → **tanya user** (juga di mode otonom), supaya user memilih prioritas:
   1. `"$AGENT_WORKFLOW_DIR/bin/build-preempt.sh" info` → `owner=… since=<n>m uploading=yes|no`. Judul tiket pemilik dari `getJiraIssue <KODE pemilik>`.
