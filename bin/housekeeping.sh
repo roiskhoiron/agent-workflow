@@ -37,16 +37,16 @@ tool() { # envvar-resolved-cmd args...
 free_gb() { echo "${HK_FREE_GB:-$(df -g / | awk 'NR==2{print $4}')}"; }
 busy() {
   [ -n "${HK_BUSY:-}" ] && [ "$HK_BUSY" = 1 ] && return 0
-  local l=${AGENT_LOCK_DIR:-$AW/locks}
-  local d pid
-  for d in "$l"/*/; do # same stale rule as device-lock.sh: dead pid, or no pid and >=10s old
-    [ -d "$d" ] || continue
+  # only build:heavy counts: checkout/device/account locks belong to sessions left open for days
+  local d=${AGENT_LOCK_DIR:-$AW/locks}/build%3Aheavy pid
+  if [ -d "$d" ]; then # same stale rule as device-lock.sh: dead pid, or no pid and >=10s old
     pid=$(cat "$d/pid" 2>/dev/null)
     if [ -n "$pid" ]; then kill -0 "$pid" 2>/dev/null && return 0
     elif [ $((NOW_REAL - $(stat -f %m "$d" 2>/dev/null || echo 0))) -lt 10 ]; then return 0; fi
-  done
+  fi
   [ -n "${HK_BUSY:-}" ] && return 1 # explicit 0 skips the process check
-  pgrep -f 'xcodebuild|GradleDaemon|konan|appdistribution|altool' >/dev/null 2>&1
+  # a running build, not an idle GradleDaemon (Android Studio keeps those alive for hours)
+  pgrep -f 'xcodebuild|GradleWrapperMain|appdistribution|altool' >/dev/null 2>&1
 }
 
 daily() {
@@ -76,16 +76,38 @@ weekly() {
   for c in "$HOME"/.konan/cache*; do
     [ -d "$c" ] && prune "$c" 30
   done
-  prune "$X/iOS DeviceSupport" 90
+  light
+}
+light() { # safe while a build runs: nothing a build reads
+  prune "$HOME/Library/Developer/Xcode/iOS DeviceSupport" 90
   tool "$XCRUN" simctl delete unavailable
   tool "$POD" cache clean --all
   tool "$BREW" cleanup -s
   tool "$NPM" cache clean --force
 }
-
-if busy; then log "busy, skipping"; exit 0; fi
+low_disk() { # once per day
+  if [ "$(free_gb)" -lt 50 ] && [ ! -e "$STATE/lowdisk-$today" ]; then
+    touch "$STATE/lowdisk-$today"; log "still low: $(free_gb) GB"
+    notify "Disk still below 50 GB after cleanup ($(free_gb) GB free)"
+  fi
+}
 
 today=$(date -r "$NOW" +%F); hm=$(date -r "$NOW" +%H%M); dow=$(date -r "$NOW" +%u)
+if busy; then
+  log "busy, skipping"
+  if [ "$(free_gb)" -lt 50 ] && [ ! -e "$STATE/emergency-$today" ]; then
+    touch "$STATE/emergency-$today"; log "emergency while busy: free $(free_gb) GB, light cleanup"
+    light; low_disk
+  fi
+  last=$(cat "$STATE/daily" 2>/dev/null)
+  if [ -n "$last" ] && [ "$last" != "$today" ] && [ "$last" != "$(date -r $((NOW - 86400)) +%F)" ] \
+    && [ ! -e "$STATE/skipnote-$today" ]; then
+    touch "$STATE/skipnote-$today"
+    notify "housekeeping dilewati sejak $last karena build terus berjalan; cek $LOG"
+  fi
+  [ "$FAILS" -gt 0 ] && notify "housekeeping: $FAILS error(s), see $LOG"
+  exit 0
+fi
 did_daily=0
 if [ "$hm" -ge 0300 ] 2>/dev/null && [ "$(cat "$STATE/daily" 2>/dev/null)" != "$today" ]; then
   daily; did_daily=1; echo "$today" > "$STATE/daily"
@@ -97,10 +119,7 @@ if [ "$(free_gb)" -lt 50 ] && [ ! -e "$STATE/emergency-$today" ]; then
   log "emergency: free $(free_gb) GB"
   touch "$STATE/emergency-$today"
   [ "$did_daily" = 1 ] || daily
-  if [ "$(free_gb)" -lt 50 ] && [ ! -e "$STATE/lowdisk-$today" ]; then
-    touch "$STATE/lowdisk-$today"; log "still low: $(free_gb) GB"
-    notify "Disk still below 50 GB after cleanup ($(free_gb) GB free)"
-  fi
+  low_disk
 fi
 [ "$FAILS" -gt 0 ] && notify "housekeeping: $FAILS error(s), see $LOG"
 exit 0

@@ -232,10 +232,14 @@ MCP = konektor yang membuat Claude bisa memakai layanan luar. Workflow ini memak
 Bukan bagian workflow (boleh terpasang, tidak dibutuhkan): GitHub MCP (PR dibuat lewat `gh` CLI), context7 (docs library untuk coding biasa). Guard ikut memeriksa panggilan Atlassian: transisi di luar daftar ditolak, dan di mode audit semua penulisan Jira diblokir.
 
 ### Pembersihan otomatis (`housekeeping.sh`)
-Dijalankan launchd tiap jam (`com.agentworkflow.housekeeping`), dan dilewati bila ada build yang sedang berjalan.
+Dijalankan launchd tiap jam (`com.agentworkflow.housekeeping`). Gratis, jalan walau Orca tertutup, tanpa agen Claude.
+
+**Kapan dilewati:** hanya saat ada build yang benar-benar jalan: kunci `build:heavy` dipegang, atau proses `xcodebuild`, `gradlew`, atau upload aktif. Kunci checkout/device/akun milik sesi yang dibiarkan terbuka, dan Gradle daemon yang diam, **tidak** dihitung sibuk.
 - **Harian (≥ 03.00):** DerivedData Xcode > 3 hari; APK/AAB/IPA > 7 hari di folder `~/.agent-workflow/build-roots.txt`.
 - **Mingguan (Minggu ≥ 03.30):** semua DerivedData, cache Gradle/Kotlin Native lama, iOS DeviceSupport > 90 hari, simulator rusak, cache CocoaPods/brew/npm.
-- **Darurat:** sisa disk < 50 GB → bersihkan harian sekarang; masih kurang → notifikasi.
+- **Darurat:** sisa disk < 50 GB → bersihkan harian sekarang; masih kurang → notifikasi. Saat build jalan, darurat tetap membersihkan bagian yang aman (DeviceSupport lama, simulator rusak, cache CocoaPods/brew/npm).
+- **Pengingat:** pembersihan harian terlewat lebih dari sehari karena build terus berjalan → notifikasi sekali per hari.
+- Log: `~/.agent-workflow/logs/housekeeping.log`. Banyak "busy, skipping" berarti ada build yang tidak selesai atau kunci `build:heavy` yang tertahan.
 
 ## Pasang di komputer lain (macOS)
 
