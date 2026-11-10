@@ -27,7 +27,7 @@ case $cmd in
   release) [ "$(cur)" = "$owner" ] && rm -rf "$d"; exit 0 ;;
   who) cur ;;
   # move: owner=from, to=new owner; pid first so the lock is never free or half-owned
-  move) [ "$(cur)" = "$owner" ] && { echo "${AGENT_LOCK_PID:-$PPID}" > "$d/pid"; echo "$to" > "$d/owner"; exit 0; }
+  move) [ -n "$owner" ] && [ "$(cur)" = "$owner" ] && echo "${AGENT_LOCK_PID:-$PPID}" > "$d/pid" && echo "$to" > "$d/owner" && exit 0
         cur; exit 1 ;;
   *) echo "usage: $0 acquire|release|who|move <resource> [owner [new-owner]]" >&2; exit 2 ;;
 esac

@@ -23,7 +23,9 @@ assert_eq "B" "$("$L" who "$R")" "owner after reclaim"
 assert_exit 1 "move: from salah ditolak" -- "$L" move dev:m B C
 assert_exit 0 "move: A -> human-X" -- env AGENT_LOCK_PID=$$ "$L" move dev:m A human-X
 assert_eq "human-X" "$("$L" who dev:m)" "move: owner baru"
+assert_eq "$$" "$(cat "$AGENT_LOCK_DIR/dev%3Am/pid")" "move: pid baru"
 assert_exit 1 "move: kunci bebas -> 1" -- "$L" move dev:none A B
+assert_exit 1 "move: from kosong pada kunci bebas" -- "$L" move dev:none "" B
 "$L" release dev:m human-X
 
 # collision-free names
