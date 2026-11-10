@@ -35,4 +35,13 @@ jq -n --arg c "\"$REPO/hooks/guard.sh\"" '{hooks:{PreToolUse:[{matcher:"Bash|Edi
 bash "$REPO/install.sh" --home "$H3" >/dev/null 2>&1
 assert_eq "$NEWM" "$(jq -r '.hooks.PreToolUse[]|select(.hooks[0].command|test("guard.sh"))|.matcher' "$H3/.claude/settings.json")" "upgrade: guard matcher replaced"
 assert_eq 1 "$(jq '[.hooks.PreToolUse[]|select(.hooks[0].command|test("guard.sh"))]|length' "$H3/.claude/settings.json")" "upgrade: guard hook once"
+# adb soft_deny entries removed (guard.sh now covers device locks); other entries kept
+H4="$H/home4"; mkdir -p "$H4/.claude"
+echo '{"autoMode":{"soft_deny":["$defaults","Bash(adb:* uninstall *)","Bash(adb:* shell pm clear *)","Bash(x)"]}}' > "$H4/.claude/settings.json"
+bash "$REPO/install.sh" --home "$H4" >/dev/null 2>&1
+assert_eq '["$defaults","Bash(x)"]' "$(jq -c .autoMode.soft_deny "$H4/.claude/settings.json")" "adb soft_deny removed, others kept"
+H5="$H/home5"; mkdir -p "$H5/.claude"
+echo '{}' > "$H5/.claude/settings.json"
+bash "$REPO/install.sh" --home "$H5" >/dev/null 2>&1
+assert_eq "no" "$(jq -e 'has("autoMode")' "$H5/.claude/settings.json" >/dev/null && echo yes || echo no)" "no autoMode: none created"
 exit $FAILS

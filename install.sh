@@ -24,7 +24,9 @@ jq --arg cmd "\"$REPO/hooks/guard.sh\"" --arg m 'Bash|Edit|Write|MultiEdit|Noteb
   def isguard: any((.hooks // [])[]?; .command | tostring | test("/guard\\.sh\"?$"));
   .hooks.PreToolUse = ((.hooks.PreToolUse // [])
     | if any(.[]; isguard) then map(if isguard then .matcher = $m else . end)
-      else . + [{matcher:$m, hooks:[{type:"command",command:$cmd}]}] end)' "$S" > "$tmp"
+      else . + [{matcher:$m, hooks:[{type:"command",command:$cmd}]}] end)
+  # drop adb uninstall/pm clear soft_deny: guard.sh now blocks them on device locks
+  | if .autoMode.soft_deny then .autoMode.soft_deny |= map(select(test("^Bash\\(adb:\\* (uninstall|shell pm clear) \\*\\)$") | not)) else . end' "$S" > "$tmp"
 mv "$tmp" "$S"
 
 P="$REPO/launchd/com.agentworkflow.housekeeping.plist"
