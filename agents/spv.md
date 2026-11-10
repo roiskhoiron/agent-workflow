@@ -19,6 +19,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, lalu sesuai kebut
 6. Bagi jatah device dan akun uji (owner `<KODE>-<peran><n>`): virtual dulu, `--physical` hanya untuk TC `(fisik)` (`devices.md`); pastikan tiap agen melepas kuncinya.
 7. Alur: Coder → Reviewer (revisi kembali ke Coder) → QA → kamu. Laporan dan pertanyaan worker datang lewat pesan teammate.
 8. Terima laporan QA (`${TMPDIR:-/tmp}/qa/<KODE>/`), publikasikan ke Claude Docs sesuai `report-format.md`.
+Dengan `--uat`, kamu memegang slot `human-<KODE>` (`device-lock.sh move`, pid-mu) dan menjalankan `uat-watch.sh` di background sampai user bilang selesai (`develop-tiket` langkah 8b, `devices.md` → Slot UAT). `uat-watch.sh` exit 3 → beri tahu user pemantauan log gagal (sebut alasannya); slot tetap sampai user bilang selesai.
 9. Putuskan selesai, lalu serahkan ke Release (build, PR/MR, komentar Jira, geser Ready To Review). `--batch`: serahkan build hanya di titik tunggu (semua tiket lolos review atau dikeluarkan), satu build untuk semua tiket; perbaikan pasca-QA juga dikumpulkan dulu lalu satu build ulang. `--separate`: per tiket.
 
 ## Tidak boleh

@@ -23,7 +23,7 @@ Ketik perintah ini di Claude Code, di dalam terminal Orca:
 | Perintah | Gunanya | Jalankan dari |
 | --- | --- | --- |
 | `/validate-tiket KODE...` | Cek tiket layak dikerjakan; bug direproduksi di device. Hasil: laporan bergambar + komentar Jira | mana saja |
-| `/develop-tiket KODE... [--solo\|--tim] [--batch\|--separate]` | Rencana, kode (TDD), review, uji di device, build, PR/MR, komentar Jira, tiket ke Ready To Review | workspace domain |
+| `/develop-tiket KODE... [--solo\|--tim] [--batch\|--separate] [--uat]` | Rencana, kode (TDD), review, uji di device, build, PR/MR, komentar Jira, tiket ke Ready To Review | workspace domain |
 | `/rilis-tiket KODE-RILIS` atau `/rilis-tiket baru release\|hotfix` | Kumpulkan tiket ke branch rilis/hotfix, cek manifest, build beta, satu MR ke upstream | root project atau domain |
 | `/audit-issue "teks" [--solo\|--tim] [lampiran...]` | Telusuri keluhan yang belum jadi tiket, **hanya-baca**. Hasil: laporan + saran tiket | mana saja |
 
@@ -44,6 +44,7 @@ Pilihan `/develop-tiket`:
 | (tanpa `--solo/--tim`) | SPV memilih: satu tiket kecil = solo, selain itu tim |
 | `--batch` (default) | Semua tiket digabung: satu rencana, **satu build**, QA bersama di build itu. Proses berat jalan sekali untuk semua tiket |
 | `--separate` | Tiap tiket jalan sendiri: rencana, build, QA, laporan masing-masing |
+| `--uat` | Sesudah QA lulus, kamu menguji sendiri build dev di HP fisik; SPV memantau log app dan melaporkan crash. Selesai saat kamu bilang "selesai UAT" atau 3 menit tanpa log |
 
 ## Istilah penting
 
@@ -101,11 +102,12 @@ flowchart TD
   M --> B[Release: build dev]
   B --> Q[QA: uji di device]
   Q -->|gagal| K
-  Q -->|lulus| P[Laporan uji, push origin, PR/MR, komentar Jira]
+  Q -->|lulus, --uat: UAT kamu dulu| P[Laporan uji, push origin, PR/MR, komentar Jira]
   P --> T[Tiket ke Ready To Review + hapus worktree tiket]
 ```
 - Di `--batch`, build baru jalan setelah **semua** tiket lolos review (atau dikeluarkan dari batch dengan alasan tertulis). Perbaikan setelah QA dikumpulkan dulu, baru satu build ulang.
 - Tiket yang macet dikeluarkan dari batch dan dilaporkan, tidak dijalankan sendiri diam-diam.
+- Dengan `--uat`, device fisik dipindah ke kamu (kunci `human-<KODE>`); crash selama UAT mengembalikan tiket ke Coder. Pemantauan log gagal → SPV memberi tahu, dan hasil UAT mengikuti laporanmu.
 
 ### `/rilis-tiket`
 1. Baca tiket rilis (`[release-request]` / `[hotfix-release]`) dan manifest tiketnya.
@@ -146,9 +148,10 @@ Di mode tim, tiap agen adalah **teammate** Claude Code (fitur *agent teams*). Or
 - `rm -r` di luar folder project.
 - Memindah tiket ke status di luar `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit file di worktree primary; membuka tab/workspace/project Orca baru; worktree di luar folder project.
+- Uninstall, `pm clear`, dan install app hanya di device yang dikunci agen itu sendiri (atau tidak dikunci siapa pun); agen yang device-nya diambil alih diblokir dari perintah device tanpa target.
 - Mode audit: semua penulisan ke repo, git remote, dan Jira.
 
-**Agen selalu berhenti dan bertanya** bila: upload ke prod, akan membuat branch rilis/hotfix, nomor build tidak jelas, kredensial tidak ditemukan, dua fix hotfix bentrok, atau `build:heavy` sedang dipakai tiket Jira lain (kamu memilih: tunggu, atau dahulukan tugas ini).
+**Agen selalu berhenti dan bertanya** bila: upload ke prod, akan membuat branch rilis/hotfix, nomor build tidak jelas, kredensial tidak ditemukan, dua fix hotfix bentrok, atau `build:heavy` / device sedang dipakai tiket Jira lain atau kamu sendiri untuk UAT (kamu memilih: tunggu, atau dahulukan/ambil alih untuk tugas ini).
 
 **Kredensial** dibaca dari file lokal (mis. `qa.local.properties`) dan tidak pernah ditulis ke Docs, Jira, atau MR. Data uji hanya di dev/staging, diawali kode tiket (mis. `PROJ-1234-user`).
 
@@ -167,7 +170,7 @@ Agen memanggilnya sebagai `$AGENT_WORKFLOW_DIR/bin/<skrip>`. Kamu juga boleh men
 | `manifest-check.sh` | Bandingkan tiket di commit branch rilis dengan manifest | `bin/manifest-check.sh origin/master origin/release/v1.2.0 PROJ-1 PROJ-2` |
 | `build-preempt.sh` | `reap`: lepas `build:heavy` yang lupa dilepas (tidak ada build 20 menit; housekeeping menjalankannya tiap jam). Saat `build:heavy` dipakai tiket lain: `info` (siapa, berapa lama, sedang upload?), `take` (hentikan build itu dan ambil kunci, setelah kamu setuju), `check` (agen yang dihentikan tahu harus build ulang) | `bin/build-preempt.sh info` |
 | `device-preempt.sh` | Ambil alih device yang dikunci agen lain, hanya setelah kamu setuju: `info` (siapa, berapa lama, sedang diuji?), `take` (hentikan proses uji di device itu, tulis catatan untuk pemegang lama, pindahkan kunci) | `bin/device-preempt.sh info android:<serial>` |
-| `uat-watch.sh` | Pantau log app selama slot UAT di HP fisik: catat semua baris dan crash, lepas kunci `human-<KODE>` setelah 3 menit tanpa log | `bin/uat-watch.sh android:<serial> <package> human-<KODE> <outdir>` |
+| `uat-watch.sh` | Pantau log app selama slot UAT di HP fisik: catat semua baris dan crash, lepas kunci `human-<KODE>` setelah 3 menit tanpa log; exit 3 = paket Android tidak ketemu, kunci tidak disentuh | `bin/uat-watch.sh android:<serial> <package> human-<KODE> <outdir>` |
 | `audit-mode.sh` | Nyalakan/matikan mode hanya-baca untuk `/audit-issue` | `AGENT_LOCK_PID=$PPID bin/audit-mode.sh status` |
 | `housekeeping.sh` | Bersihkan cache build tiap jam (dijalankan launchd, lihat bawah) | otomatis |
 

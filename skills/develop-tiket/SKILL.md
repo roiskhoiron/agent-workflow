@@ -1,7 +1,7 @@
 ---
 name: develop-tiket
-description: Kerjakan tiket Jira In Progress sampai Ready To Review (rencana, kode TDD, review, QA di device, build, PR/MR, komentar Jira). Dipanggil lewat `/develop-tiket KODE... [--solo|--tim] [--batch|--separate]` dari worktree domain Orca. Use when asked to develop, implement, or fix a Jira ticket; kata kunci - kerjakan tiket, develop tiket, implementasi tiket.
-argument-hint: KODE-TIKET... [--solo|--tim] [--batch|--separate]
+description: Kerjakan tiket Jira In Progress sampai Ready To Review (rencana, kode TDD, review, QA di device, build, PR/MR, komentar Jira). Dipanggil lewat `/develop-tiket KODE... [--solo|--tim] [--batch|--separate] [--uat]` dari worktree domain Orca. Use when asked to develop, implement, or fix a Jira ticket; kata kunci - kerjakan tiket, develop tiket, implementasi tiket.
+argument-hint: KODE-TIKET... [--solo|--tim] [--batch|--separate] [--uat]
 ---
 Kerjakan satu atau lebih tiket Jira (`$ARGUMENTS`). Sesi ini = **SPV**: ikuti `~/.claude/agents/spv.md` (tidak menulis kode produk, tidak memindah ke Done).
 
@@ -10,6 +10,7 @@ Baca dulu (jangan disalin ke sini): `~/.claude/skills/_agent-workflow-shared/rul
 **Alur** (`--batch` default; terpisah dari `--solo`/`--tim`, boleh digabung):
 - **`--batch`:** semua tiket = satu batch: satu rencana, satu branch batch, **satu build**, QA di build itu. Proses berat jalan **sekali untuk semua tiket**, di titik tunggu langkah 7 dan 9. Tidak ada build, pasang, atau QA per tiket.
 - **`--separate`:** tiap tiket jalur sendiri: rencana, build dev dari branch tiket, QA, laporan, dan selesai sendiri; tanpa branch batch. Build tetap antre `build:heavy`.
+- **`--uat`:** sesudah QA lulus, user menguji sendiri build dev di HP fisik sementara SPV memantau log (langkah 8b). `--batch`: satu slot untuk build batch, owner `human-<KODE pertama>`; `--separate`: satu slot per tiket. Tanpa `--uat` tidak ada slot manusia.
 
 ```mermaid
 flowchart LR
@@ -17,7 +18,7 @@ flowchart LR
   P --> C[Coder TDD per tiket] --> V{Review bersih?}
   V -- tidak --> C
   V -- ya --> M[Gabung ke branch batch] --> B[Satu build dev/beta]
-  B --> Q[QA per tiket] --> D{Selesai?}
+  B --> Q[QA per tiket] --> U[UAT user, bila --uat] --> D{Selesai?}
   D -- tidak --> C
   D -- ya --> L[Laporan Docs] --> X[Push + PR/MR] --> K[Komentar Jira] --> T[Ready To Review]
 ```
@@ -49,6 +50,13 @@ flowchart LR
    - SPV membagi jatah: per QA run, **satu** `device-pick.sh <ios|android> <KODE>-qa<n>` per platform (platform disebut di tugas), dipakai untuk semua TC run itu; TC `(fisik)` dapat QA run sendiri dengan `--physical`; akun lewat `device-lock.sh acquire account:qa.userN <KODE>-qa<n>`.
    - UI → Maestro + screenshot bertanda (iOS native/metrik UI → XCUITest runner); API → Schemathesis (dev/staging); kontrak → Pact. Spec/kontrak tidak ada di repo → TC itu Tertahan + tanya.
    - QA menulis `report.md` + `*.png` sesuai "Laporan uji"; Gagal → kembali ke langkah 5.
+8b. **UAT (`--uat`)**, sesudah QA lulus dan sebelum langkah 10 (cara kerja slot: `devices.md` → Slot UAT):
+   1. SPV menugaskan QA run `device-pick.sh <plat> <KODE>-qa<n> --physical`; QA memasang build dev yang diuji lalu lapor **tanpa melepas kunci**.
+   2. SPV: `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" move <res> <KODE>-qa<n> human-<KODE>`; beri tahu user di chat: device, app, build, dan "bilang *selesai UAT* bila sudah".
+   3. SPV menjalankan `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/uat-watch.sh" <res> <app> human-<KODE> ${TMPDIR:-/tmp}/qa/<KODE>/uat` di background (`run_in_background`).
+   4. User bilang selesai → `device-lock.sh release <res> human-<KODE>` (watcher berhenti sendiri). Watcher `end=idle` (3 menit tanpa log) → slot sudah lepas sendiri.
+   5. `crash=0` → lanjut langkah 10. Crash → potongan `uat-crash.txt` masuk laporan uji dan tiket kembali ke langkah 5 (Coder → Reviewer → QA → UAT lagi).
+   6. `uat-watch.sh` exit 3 (`end=error reason=…`): beri tahu user bahwa pemantauan log gagal beserta alasannya; slot tetap `human-<KODE>` sampai user bilang selesai, dan hasil UAT bergantung pada laporan user.
 9. **Putuskan selesai** (per tiket) hanya bila: semua TC AC **Lulus**, atau **Tertahan** dengan alasan tertulis; review tanpa temuan wajib; tes project lulus. Belum → ulangi 5–8 untuk tiket itu, dengan aturan:
    - `--batch`: **titik tunggu.** Perbaiki dan review semua tiket yang gagal dulu, merge ulang, lalu **satu** build ulang untuk batch; QA ulang tiket yang diperbaiki, tiket lain cukup cek singkat tidak rusak. Tidak ada build ulang per tiket.
    - Tiket macet (butuh jawaban, blocking) → keluarkan dari batch, laporkan statusnya, batch jalan terus tanpa tiket itu. Tidak dijalankan sendiri diam-diam.
@@ -63,4 +71,4 @@ flowchart LR
    |---|---|---|---|---|
 
 ## Berhenti lebih awal / galat
-Sebelum berhenti (guard, tanya, galat, user membatalkan): lepas semua kunci milik batch ini (`AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release <resource> <owner>` untuk tiap device, `checkout:*`, `account:*`, `build:heavy`), minta teammate melakukan hal sama lalu hentikan mereka, dan laporkan posisi terakhir per tiket. Pertanyaan wajib (`rules.md`): SPV tanya di chat dengan ringkasan + saran; teammate bertanya lewat SPV.
+Sebelum berhenti (guard, tanya, galat, user membatalkan): lepas semua kunci milik batch ini (`AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release <resource> <owner>` untuk tiap device (termasuk slot `human-<KODE>`), `checkout:*`, `account:*`, `build:heavy`), minta teammate melakukan hal sama lalu hentikan mereka, dan laporkan posisi terakhir per tiket. Pertanyaan wajib (`rules.md`): SPV tanya di chat dengan ringkasan + saran; teammate bertanya lewat SPV.

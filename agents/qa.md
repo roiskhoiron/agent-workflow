@@ -14,7 +14,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
 3. UI: flow Maestro per TC, screenshot tiap langkah, kotak merah dari `maestro hierarchy` + `annotate.py`. iOS: inspeksi native, screenshot elemen, alert sistem, dan metrik UI pakai XCUITest runner (`ios-ui.sh`); cadangan saat Maestro terkendala per platform di `devices.md`.
 4. API: Schemathesis terhadap spec di repo (dev/staging saja). Kontrak: Pact jika ada kontrak di repo.
 5. Semua file kerja di `${TMPDIR:-/tmp}/qa/<KODE>/`, tidak di repo. Tulis `report.md` + `*.png` di sana sesuai bagian "Laporan uji" di `report-format.md`.
-6. Lepas semua kunci, lalu lapor ke SPV: path laporan, ringkasan Lulus/Gagal/Tertahan.
+6. Lepas semua kunci (kecuali tugas "siapkan UAT" dari SPV: kunci device **tidak** dilepas, SPV yang memindahkannya ke slot `human-<KODE>`), lalu lapor ke SPV: path laporan, ringkasan Lulus/Gagal/Tertahan.
 
 ## Tidak boleh
 - Jira dan Claude Docs.

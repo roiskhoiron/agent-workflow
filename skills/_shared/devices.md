@@ -39,6 +39,25 @@ AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release ios:<udid>
 - Kunci milik proses yang sudah mati otomatis dianggap bebas.
 - Owner = `<KODE>-<peran><n>`, mis. `PROJ-1234-qa1`.
 
+## Device dipakai
+`device-pick.sh` exit 1 = tidak ada device yang cocok bebas. Cek pemilik tiap device yang cocok (`AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" who <res>`):
+- Pemilik dari batch/rilis yang sama (KODE-nya ada di daftar tiket kita) → antre: coba lagi tiap 30 detik, tanpa bertanya.
+- Pemilik **tiket Jira lain** atau `human-*` → **tanya user** (juga di mode otonom; teammate lewat SPV, cara di `rules.md`):
+  1. `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-preempt.sh" info <res>` → `owner=… since=<n>m testing=yes|no`. Judul tiket pemilik dari `getJiraIssue <KODE pemilik>`.
+  2. Tanya (chat): "Device <res> dipakai **<KODE> — <judul>** (sudah <n> menit, sedang uji: ya/tidak). Tugas kita: **<KODE> — <judul>**. Tunggu atau ambil alih?" Untuk `human-*`: "Device <res> sedang dipakai Anda untuk UAT <KODE>. Tugas kita: **<KODE> — <judul>**. Tunggu atau ambil alih?"
+  3. **Tunggu** → antre. **Ambil alih** → `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-preempt.sh" take <res> <owner kita>`: exit 0 = device milik kita; 1 = kunci keburu diambil pihak lain → ulangi dari awal (`device-pick.sh`). Tidak pernah ambil alih tanpa pilihan user.
+- **Uji kita terhenti / guard bilang "diambil alih":** bukan kegagalan tiket. Antre lagi lewat `device-pick.sh`, ulangi uji dari awal, dan tulis di laporan "uji sempat didahulukan untuk <KODE>". Selama diambil alih, guard menolak perintah adb/maestro/`simctl booted` tanpa target: selalu tulis `-s <serial>` / `--device` / udid.
+- **Uninstall / `pm clear` / install** boleh tanpa bertanya di device yang kamu kunci sendiri (atau yang tidak dikunci siapa pun); guard menolak bila dikunci pihak lain. Selalu tulis `-s <serial>` / udid.
+
+### Slot UAT (`--uat`)
+Setelah QA lulus, user menguji sendiri di HP fisik (`develop-tiket` langkah 8b). Kunci device pindah dari QA ke user, tanpa celah:
+1. QA mengambil `device-pick.sh <plat> <KODE>-qa<n> --physical`, memasang build dev yang diuji, lapor ke SPV **tanpa melepas kunci**.
+2. SPV (pid slot = pid SPV): `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" move <res> <KODE>-qa<n> human-<KODE>`.
+3. SPV menjalankan di background (`run_in_background`): `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/uat-watch.sh" <res> <app> human-<KODE> ${TMPDIR:-/tmp}/qa/<KODE>/uat` (`<app>` = package Android atau nama proses iOS). Keluarannya `end=idle|released crash=<n> log=…`.
+4. Selesai bila user bilang selesai (SPV `device-lock.sh release <res> human-<KODE>`; watcher berhenti sendiri, `end=released`) atau 3 menit tanpa log (watcher melepas kunci sendiri, `end=idle`).
+5. `uat-watch.sh` exit 3 (`end=error reason=…`, paket/uid Android tidak ketemu; kunci tidak disentuh): SPV memberi tahu user bahwa pemantauan log gagal beserta alasannya. Slot tetap `human-<KODE>` sampai user bilang selesai, dan hasil UAT hanya bergantung pada laporan user.
+- Slot `human-*` tidak pernah dihentikan paksa oleh `device-preempt.sh take`; pemegangnya hanya diberi catatan dan kuncinya dipindah, dan hanya setelah user setuju.
+
 ## Folder kerja
 File sementara (flow, `h.json`, `boxes.json`, screenshot) **tidak** ditulis ke repo:
 - Validator: `${TMPDIR:-/tmp}/validate/<KODE>/`
