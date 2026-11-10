@@ -274,14 +274,110 @@ for s in segs(cmd):
     if s: print("\x1f".join(s))
 '
 
+# --- devices: locks from bin/device-lock.sh, takeover notes from bin/device-preempt.sh ---
+lock_dir() { printf '%s/%s' "${AGENT_LOCK_DIR:-$HOME/.agent-workflow/locks}" "$(printf '%s' "$1" | sed 's/%/%25/g; s#/#%2F#g; s/:/%3A/g')"; }
+
+# $$ and up to 8 ancestor pids (cached in ANC); a lock/note of any of them is our own
+ancestors() {
+  [ -n "${ANC:-}" ] && return 0
+  local p=$$
+  for _ in 0 1 2 3 4 5 6 7 8; do
+    ANC="$ANC $p"
+    p=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+    [ -n "$p" ] && [ "$p" -gt 1 ] || break
+  done
+  ANC="$ANC "
+}
+
+# block when <res> is locked by a live pid that is not us
+check_lock() {
+  local d p
+  d=$(lock_dir "$1"); p=$(cat "$d/pid" 2>/dev/null)
+  [ -n "$p" ] && kill -0 "$p" 2>/dev/null || return 0
+  ancestors; [[ $ANC == *" $p "* ]] && return 0
+  block "device $1 dikunci $(cat "$d/owner" 2>/dev/null). Tunggu atau tanya user untuk ambil alih (devices.md → Device dipakai)."
+}
+
+# install/uninstall/pm clear (adb, android, xcrun simctl/devicectl): only on a device that is not locked by someone else.
+# $1 = tool basename, $2 = ANDROID_SERIAL= seen earlier in the segment, rest = args after the tool
+check_device() {
+  local tool=$1 s=$2 mut='' a n
+  shift 2
+  case $tool in
+    adb)
+      while [ $# -gt 0 ]; do
+        case $1 in -s) s=${2:-}; shift 2;; -t|-H|-P|-L) shift 2;; -*) shift;; *) break;; esac
+      done
+      case ${1:-} in
+        uninstall|install|install-multiple) mut=1;;
+        shell) [[ " ${*:2} " == *" pm clear "* ]] && mut=1;;
+      esac
+      [ -n "$mut" ] || return 0
+      if [ -z "$s" ]; then
+        s=$("${ADB:-adb}" devices 2>/dev/null | awk '$2 == "device" {print $1}')
+        n=$(printf '%s' "$s" | grep -c .)
+        [ "$n" -eq 1 ] || block "adb $1 tanpa device pasti ($n device terhubung): tulis -s <serial>."
+      fi
+      check_lock "android:$s";;
+    android)
+      for a; do case $a in -*) ;; *) [ "$a" = install ] || return 0; break;; esac; done
+      while [ $# -gt 0 ]; do
+        case $1 in --device) s=${2:-}; shift;; --device=*) s=${1#*=};; esac
+        shift
+      done
+      [ -n "$s" ] || block "android install tanpa device: tulis --device <serial>."
+      check_lock "android:$s";;
+    xcrun)
+      if [ "${1:-}" = simctl ]; then
+        case ${2:-} in install|uninstall) s=${3:-};; *) return 0;; esac
+      elif [ "${1:-} ${2:-} ${4:-}" = "devicectl device app" ]; then
+        case ${3:-} in install|uninstall) ;; *) return 0;; esac
+        while [ $# -gt 0 ]; do
+          case $1 in --device|-d) s=${2:-}; shift;; --device=*) s=${1#*=};; esac
+          shift
+        done
+      else
+        return 0
+      fi
+      case $s in ''|booted|-*) block "xcrun $1 install/uninstall tanpa udid pasti: tulis udid (bukan booted).";; esac
+      check_lock "ios:$s";;
+  esac
+  return 0
+}
+
+# takeover notes for us (device-<our pid or ancestor>): a line whose lock we hold again is dropped;
+# otherwise any Bash command naming that device id is blocked
+check_preempted() {
+  local dir=${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/preempted cmd p f res own at keep drop msg=''
+  [ -d "$dir" ] || return 0
+  cmd=$(printf '%s' "$input" | "$JQ" -r '.tool_input.command // empty' 2>/dev/null)
+  ancestors
+  for p in $ANC; do
+    f="$dir/device-$p"; [ -f "$f" ] || continue
+    keep='' drop=''
+    while IFS=$'\t' read -r res own at; do
+      [ -n "$res" ] || continue
+      if [ "$(cat "$(lock_dir "$res")/pid" 2>/dev/null)" = "$p" ]; then drop=1; continue; fi
+      keep+="$res"$'\t'"$own"$'\t'"$at"$'\n'
+      # whole id only (U1 must not match EMU1)
+      [ -z "$msg" ] && [[ $cmd =~ (^|[^A-Za-z0-9._:-])"${res#*:}"($|[^A-Za-z0-9._:-]) ]] &&
+        msg="device $res diambil alih oleh $own pada $at: berhenti, antre dengan device-pick, ulangi uji dari awal (uji terhenti ini bukan kegagalan tiket)."
+    done < "$f"
+    if [ -z "$keep" ]; then rm -f "$f"
+    elif [ -n "$drop" ]; then printf '%s' "$keep" > "$f.$$" && mv "$f.$$" "$f"
+    fi
+  done
+  [ -z "$msg" ] || block "$msg"
+}
+
 check_Bash() {
-  local segs w i c t prev gsub
+  local segs w i c t prev gsub es dev=''
   [ -n "$PY" ] || block "python3 tidak ditemukan, guard tidak bisa memeriksa perintah Bash."
   segs=$(printf '%s' "$input" | "$PY" -c "$TOKENIZER" 2>/dev/null) || block "perintah Bash tidak bisa diurai oleh guard."
   root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || echo "$cwd")
   wd=$cwd   # follows cd/pushd inside the chained command
   while IFS=$'\x1f' read -ra w; do
-    gsub=-1; prev=''
+    gsub=-1; prev=''; es=''
     # any git/rm token starts a command, wherever it sits (sudo -u x, timeout 60, VAR=..., if/then, xargs ...)
     for ((i = 0; i < ${#w[@]}; i++)); do
       c=${w[$i]##*/}
@@ -295,10 +391,14 @@ check_Bash() {
         orca) check_orca "${w[@]:$((i+1))}";;
         gh|glab) [ -n "$AUDIT" ] && check_forge "${w[@]:$((i+1))}";;
         rm) [ $i -eq $gsub ] || check_rm "${w[@]:$((i+1))}";;
+        ANDROID_SERIAL=*) es=${w[$i]#*=};;
+        adb|xcrun|android) dev=1; check_device "$c" "$es" "${w[@]:$((i+1))}";;
+        maestro|ios-ui.sh) dev=1;;
       esac
       prev=${w[$i]}
     done
   done <<< "$segs"
+  [ -z "$dev" ] || check_preempted
 }
 
 # Edit/Write/MultiEdit: the primary (main) worktree is read-only once the repo has a linked worktree
