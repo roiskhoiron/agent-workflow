@@ -55,5 +55,32 @@ printf 'android:EMU1\tPROJ-2-qa1\t2026-11-10 10:00\nios:U1\tPROJ-3-qa1\t2026-11-
 chk 0 'adb -s EMU1 shell input tap 1 1'
 assert_eq 'ios:U1' "$(cut -f1 "$N")" "only relocked line dropped"
 chk 2 'xcrun simctl io U1 screenshot a.png'
+# untargeted adb/maestro/simctl booted while preempted on that platform
+printf 'android:EMU1\tPROJ-2-qa1\t2026-11-10 10:00\n' > "$N"
+lock android:EMU1 $OTHER PROJ-2-qa1
+chk 2 'adb shell input tap 1 1'; grep -q 'diambil alih.*tulis -s/--device eksplisit' "$T/err"; assert_eq 0 $? "msg untargeted"
+chk 2 'maestro test f.yaml'
+chk 2 'ANDROID_SERIAL=EMU1 adb shell input tap 1 1'
+chk 0 'adb -s EMU2 shell input tap 1 1'
+chk 0 'ANDROID_SERIAL=EMU2 adb shell input tap 1 1'
+chk 0 'maestro --device EMU2 test f.yaml'
+chk 0 'xcrun simctl io booted screenshot a.png'
+printf 'ios:U1\tPROJ-3-qa1\t2026-11-10 10:05\n' > "$N"
+chk 2 'xcrun simctl io booted screenshot a.png'
+rm -f "$N"
+
+# "android" as a dir/word, not the CLI
+for c in 'cd android && ./gradlew assembleDebug' 'cd /Users/x/proj/android' 'ls android' 'rg foo android'; do chk 0 "$c"; done
+
+# trailing adb option flag must not hang the guard
+fin() { # cmd: guard must finish within 3s with exit 0
+  jq -cn --arg c "$1" '{tool_name:"Bash",tool_input:{command:$c},cwd:"/"}' > "$T/in"
+  "$G" < "$T/in" >/dev/null 2>&1 & local p=$! k
+  for k in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do kill -0 $p 2>/dev/null || break; sleep 0.2; done
+  if kill -0 $p 2>/dev/null; then kill $p; wait $p 2>/dev/null; assert_eq done hang "finishes: $1"
+  else wait $p; assert_eq 0 $? "finishes: $1"; fi
+}
+fin 'echo adb -s'
+fin 'grep -rn adb -t'
 chk 0 'ls -la'
 exit $((FAILS>0))

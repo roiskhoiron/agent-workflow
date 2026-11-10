@@ -306,8 +306,10 @@ check_device() {
   case $tool in
     adb)
       while [ $# -gt 0 ]; do
-        case $1 in -s) s=${2:-}; shift 2;; -t|-H|-P|-L) shift 2;; -*) shift;; *) break;; esac
+        case $1 in -s) s=${2:-}; shift;; -t|-H|-P|-L) shift;; -*) ;; *) break;; esac
+        [ $# -gt 0 ] && shift  # flag may be the last arg
       done
+      [ -n "$s" ] || blind+=" android"
       case ${1:-} in
         uninstall|install|install-multiple) mut=1;;
         shell) [[ " ${*:2} " == *" pm clear "* ]] && mut=1;;
@@ -320,7 +322,8 @@ check_device() {
       fi
       check_lock "android:$s";;
     android)
-      for a; do case $a in -*) ;; *) [ "$a" = install ] || return 0; break;; esac; done
+      for a; do case $a in -*) ;; *) [ "$a" = install ] && mut=1; break;; esac; done
+      [ -n "$mut" ] || return 0  # `android` as a word (cd android, ls android) is not the CLI
       while [ $# -gt 0 ]; do
         case $1 in --device) s=${2:-}; shift;; --device=*) s=${1#*=};; esac
         shift
@@ -328,6 +331,7 @@ check_device() {
       [ -n "$s" ] || block "android install tanpa device: tulis --device <serial>."
       check_lock "android:$s";;
     xcrun)
+      [ "${1:-}" = simctl ] && [[ " $* " == *" booted "* ]] && blind+=" ios"
       if [ "${1:-}" = simctl ]; then
         case ${2:-} in install|uninstall) s=${3:-};; *) return 0;; esac
       elif [ "${1:-} ${2:-} ${4:-}" = "devicectl device app" ]; then
@@ -341,14 +345,16 @@ check_device() {
       fi
       case $s in ''|booted|-*) block "xcrun $1 install/uninstall tanpa udid pasti: tulis udid (bukan booted).";; esac
       check_lock "ios:$s";;
+    maestro)
+      [ -z "$s" ] && [[ " $* " != *" --device"* ]] && blind+=" android ios";;
   esac
   return 0
 }
 
 # takeover notes for us (device-<our pid or ancestor>): a line whose lock we hold again is dropped;
-# otherwise any Bash command naming that device id is blocked
+# otherwise any Bash command naming that device id, or an untargeted one on that platform ($blind), is blocked
 check_preempted() {
-  local dir=${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/preempted cmd p f res own at keep drop msg=''
+  local dir=${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/preempted cmd p f res own at keep drop t msg=''
   [ -d "$dir" ] || return 0
   cmd=$(printf '%s' "$input" | "$JQ" -r '.tool_input.command // empty' 2>/dev/null)
   ancestors
@@ -359,9 +365,12 @@ check_preempted() {
       [ -n "$res" ] || continue
       if [ "$(cat "$(lock_dir "$res")/pid" 2>/dev/null)" = "$p" ]; then drop=1; continue; fi
       keep+="$res"$'\t'"$own"$'\t'"$at"$'\n'
+      [ -z "$msg" ] || continue
+      t="device $res diambil alih oleh $own pada $at: berhenti, antre dengan device-pick, ulangi uji dari awal (uji terhenti ini bukan kegagalan tiket)."
       # whole id only (U1 must not match EMU1)
-      [ -z "$msg" ] && [[ $cmd =~ (^|[^A-Za-z0-9._:-])"${res#*:}"($|[^A-Za-z0-9._:-]) ]] &&
-        msg="device $res diambil alih oleh $own pada $at: berhenti, antre dengan device-pick, ulangi uji dari awal (uji terhenti ini bukan kegagalan tiket)."
+      if [[ $cmd =~ (^|[^A-Za-z0-9._:-])"${res#*:}"($|[^A-Za-z0-9._:-]) ]]; then msg=$t
+      elif [[ "$blind " == *" ${res%%:*} "* ]]; then msg="$t Perintah tanpa target: tulis -s/--device eksplisit."
+      fi
     done < "$f"
     if [ -z "$keep" ]; then rm -f "$f"
     elif [ -n "$drop" ]; then printf '%s' "$keep" > "$f.$$" && mv "$f.$$" "$f"
@@ -371,7 +380,7 @@ check_preempted() {
 }
 
 check_Bash() {
-  local segs w i c t prev gsub es dev=''
+  local segs w i c t prev gsub es dev='' blind=''  # blind: platforms hit by an untargeted command (set in check_device)
   [ -n "$PY" ] || block "python3 tidak ditemukan, guard tidak bisa memeriksa perintah Bash."
   segs=$(printf '%s' "$input" | "$PY" -c "$TOKENIZER" 2>/dev/null) || block "perintah Bash tidak bisa diurai oleh guard."
   root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || echo "$cwd")
@@ -392,8 +401,8 @@ check_Bash() {
         gh|glab) [ -n "$AUDIT" ] && check_forge "${w[@]:$((i+1))}";;
         rm) [ $i -eq $gsub ] || check_rm "${w[@]:$((i+1))}";;
         ANDROID_SERIAL=*) es=${w[$i]#*=};;
-        adb|xcrun|android) dev=1; check_device "$c" "$es" "${w[@]:$((i+1))}";;
-        maestro|ios-ui.sh) dev=1;;
+        adb|xcrun|android|maestro) dev=1; check_device "$c" "$es" "${w[@]:$((i+1))}";;
+        ios-ui.sh) dev=1;;
       esac
       prev=${w[$i]}
     done
