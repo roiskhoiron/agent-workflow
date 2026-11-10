@@ -167,6 +167,7 @@ Agen memanggilnya sebagai `$AGENT_WORKFLOW_DIR/bin/<skrip>`. Kamu juga boleh men
 | `manifest-check.sh` | Bandingkan tiket di commit branch rilis dengan manifest | `bin/manifest-check.sh origin/master origin/release/v1.2.0 PROJ-1 PROJ-2` |
 | `build-preempt.sh` | `reap`: lepas `build:heavy` yang lupa dilepas (tidak ada build 20 menit; housekeeping menjalankannya tiap jam). Saat `build:heavy` dipakai tiket lain: `info` (siapa, berapa lama, sedang upload?), `take` (hentikan build itu dan ambil kunci, setelah kamu setuju), `check` (agen yang dihentikan tahu harus build ulang) | `bin/build-preempt.sh info` |
 | `device-preempt.sh` | Ambil alih device yang dikunci agen lain, hanya setelah kamu setuju: `info` (siapa, berapa lama, sedang diuji?), `take` (hentikan proses uji di device itu, tulis catatan untuk pemegang lama, pindahkan kunci) | `bin/device-preempt.sh info android:<serial>` |
+| `uat-watch.sh` | Pantau log app selama slot UAT di HP fisik: catat semua baris dan crash, lepas kunci `human-<KODE>` setelah 3 menit tanpa log | `bin/uat-watch.sh android:<serial> <package> human-<KODE> <outdir>` |
 | `audit-mode.sh` | Nyalakan/matikan mode hanya-baca untuk `/audit-issue` | `AGENT_LOCK_PID=$PPID bin/audit-mode.sh status` |
 | `housekeeping.sh` | Bersihkan cache build tiap jam (dijalankan launchd, lihat bawah) | otomatis |
 
