@@ -51,11 +51,11 @@ AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release ios:<udid>
 
 ### Slot UAT (`--uat`)
 Setelah QA lulus, user menguji sendiri di HP fisik (`develop-tiket` langkah 8b). Kunci device pindah dari QA ke user, tanpa celah:
-1. QA mengambil `device-pick.sh <plat> <KODE>-qa<n> --physical`, memasang build dev yang diuji, lapor ke SPV **tanpa melepas kunci**.
+1. QA mengambil `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-pick.sh" <plat> <KODE>-qa<n> --physical`, memasang build dev yang diuji, lapor ke SPV **tanpa melepas kunci**.
 2. SPV (pid slot = pid SPV): `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" move <res> <KODE>-qa<n> human-<KODE>`.
 3. SPV menjalankan di background (`run_in_background`): `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/uat-watch.sh" <res> <app> human-<KODE> ${TMPDIR:-/tmp}/qa/<KODE>/uat` (`<app>` = package Android atau nama proses iOS). Keluarannya `end=idle|released crash=<n> log=…`.
-4. Selesai bila user bilang selesai (SPV `device-lock.sh release <res> human-<KODE>`; watcher berhenti sendiri, `end=released`) atau 3 menit tanpa log (watcher melepas kunci sendiri, `end=idle`).
-5. `uat-watch.sh` exit 3 (`end=error reason=…`, paket/uid Android tidak ketemu; kunci tidak disentuh): SPV memberi tahu user bahwa pemantauan log gagal beserta alasannya. Slot tetap `human-<KODE>` sampai user bilang selesai, dan hasil UAT hanya bergantung pada laporan user.
+4. Selesai bila user bilang selesai (SPV `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release <res> human-<KODE>`; watcher berhenti sendiri, `end=released`) atau 3 menit tanpa log (watcher melepas kunci sendiri, `end=idle`). `end=released` tanpa user bilang selesai = slot diambil alih/dilepas lebih awal: UAT belum selesai, tanya user. Bila `move` exit 1 (kunci QA hilang): QA ambil ulang dengan `--physical` dan pasang ulang build, lalu `move` lagi.
+5. `uat-watch.sh` exit 3 (`end=error reason=…`, paket/uid Android tidak ketemu atau proses log berhenti; kunci tidak disentuh): SPV memberi tahu user bahwa pemantauan log gagal beserta alasannya. Slot tetap `human-<KODE>` sampai user bilang selesai, dan hasil UAT hanya bergantung pada laporan user.
 - Slot `human-*` tidak pernah dihentikan paksa oleh `device-preempt.sh take`; pemegangnya hanya diberi catatan dan kuncinya dipindah, dan hanya setelah user setuju.
 
 ## Folder kerja
@@ -78,7 +78,7 @@ Selalu pakai serial dari `device-pick.sh` (`--device <serial>`); jangan sentuh d
 | Tap/ketik/scroll untuk TC, reproduksi bug | Maestro flow | Android CLI → adb (lihat urutan di bawah) |
 | Hierarchy/bounds untuk kotak merah | `maestro hierarchy` | `android layout --device <serial> --full -o "$W/layout.json"` (bounds piksel) |
 | Screenshot | `takeScreenshot` di flow | `android screen capture --device <serial>` → `adb -s <serial> exec-out screencap -p` |
-| Pasang/jalankan APK | `android install` / `android run --device <serial>` | `adb -s <serial> install -r` lalu `adb shell am start` |
+| Pasang/jalankan APK | `android install --device <serial>` / `android run --device <serial>` | `adb -s <serial> install -r` lalu `adb -s <serial> shell am start` |
 | Log, shell, file, port forward | `adb -s <serial> logcat/shell/push/pull/reverse` | — |
 | Docs Android resmi | `android docs` | web |
 | Build (dev/beta/prod) | `./gradlew` sesuai `build-release.md` (flavor) | — (bukan `android build`) |

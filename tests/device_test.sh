@@ -19,7 +19,7 @@ assert_exit 0 "B acquires after release" -- "$L" acquire "$R" B
 AGENT_LOCK_PID=999999 "$L" acquire "$R" A
 assert_exit 0 "stale pid reclaimed" -- "$L" acquire "$R" B
 assert_eq "B" "$("$L" who "$R")" "owner after reclaim"
-"$L" acquire dev:m A
+AGENT_LOCK_PID=999999 "$L" acquire dev:m A
 assert_exit 1 "move: from salah ditolak" -- "$L" move dev:m B C
 assert_exit 0 "move: A -> human-X" -- env AGENT_LOCK_PID=$$ "$L" move dev:m A human-X
 assert_eq "human-X" "$("$L" who dev:m)" "move: owner baru"

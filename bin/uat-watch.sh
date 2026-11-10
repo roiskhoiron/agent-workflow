@@ -7,8 +7,8 @@
 # <app> = Android package or iOS process name (CFBundleExecutable); resource android:<serial> | ios:<udid>.
 # Env: UAT_LOG_CMD (sh -c string replacing the default log command, for tests), UAT_IDLE_SEC,
 #      ADB (default adb), PMD3 (default pymobiledevice3); AGENT_LOCK_DIR/AGENT_LOCK_PID (see device-lock.sh).
-# Android default path with the package not found (not installed / device offline): prints
-# "end=error reason=<alasan> log=...", exit 3, lock untouched.
+# Error (exit 3, lock untouched, prints "end=error reason=<alasan> log=..."): Android package not found
+# (not installed / device offline), or the log process exited (tool missing, USB unplugged, wrong udid).
 # Exit: 0 after an end=idle|released line; 3 error; 2 usage.
 # shortcut: idle uses whole-second $SECONDS (fires >UAT_IDLE_SEC); checks run at most once per second.
 # shortcut: ANRs logged by system_server (another uid) are missed by --uid; upgrade to full logcat + pid filter if ANRs slip through.
@@ -42,7 +42,8 @@ while :; do
         printf '%s\n' "$line" >&5; n=$((n+1)) ;;
     esac
   else
-    kill -0 $lp 2>/dev/null || sleep 1 # EOF (log process died): don't spin, wait out the idle timer
+    # bash 3.2 read -t gives no distinct timeout status: check the process itself (zombie = dead, not yet reaped)
+    case $(ps -o stat= -p $lp 2>/dev/null) in ""|Z*) echo "end=error reason=proses log berhenti (lihat log) log=$log"; exit 3 ;; esac
     tick=1
   fi
   [ -n "$tick" ] || [ $SECONDS -ne $chk ] || continue

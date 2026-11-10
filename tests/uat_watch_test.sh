@@ -39,5 +39,15 @@ assert_eq 3 "$rc" "uid kosong -> exit 3"
 case $out in "end=error "*) echo "  ok: end=error";; *) echo "  FAIL: output '$out'"; FAILS=$((FAILS+1));; esac
 assert_eq "$O" "$("$L" who $R)" "kunci tak disentuh saat error"
 
+# sumber log mati -> end=error, exit 3, kunci tak disentuh
+for lc in "exit 1" "echo a; exit 1"; do
+  "$L" acquire $R $O
+  out=$(UAT_LOG_CMD="$lc" "$W" $R com.x $O "$T/o5"); rc=$?
+  assert_eq 3 "$rc" "log mati ($lc) -> exit 3"
+  case $out in "end=error "*) echo "  ok: end=error";; *) echo "  FAIL: output '$out'"; FAILS=$((FAILS+1));; esac
+  assert_eq "$O" "$("$L" who $R)" "kunci tak disentuh saat log mati"
+  "$L" release $R $O
+done
+
 pgrep -f "$SL" >/dev/null; assert_eq 1 $? "tidak ada proses log tersisa"
 exit $FAILS
