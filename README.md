@@ -146,7 +146,7 @@ Di mode tim, tiap agen adalah **teammate** Claude Code (fitur *agent teams*). Or
 
 **Selalu diblokir oleh guard** (juga di mode otonom):
 - Push branch ke selain `origin`; force-push atau hapus `main`/`master`/`develop`. Pengecualian: tag `vX.Y.Z` eksplisit boleh ke `origin` dan `upstream`.
-- `rm -r` di luar folder project, kecuali artefak build (`build`, `.gradle`, `DerivedData`, dan sejenisnya) di worktree lain repo yang sama atau di bawah `~/AndroidStudioProjects` dan `~/StudioProjects`. Agen membersihkan artefak build worktree tempat ia bekerja setelah tiket/batch selesai.
+- `rm -r` di luar folder project, kecuali artefak build (`build`, `.gradle`, `DerivedData`, dan sejenisnya) di worktree lain repo yang sama atau di bawah `~/AndroidStudioProjects` dan `~/StudioProjects`, serta isi `/tmp/qa/`. Agen membersihkan artefak build worktree tempat ia bekerja setelah tiket/batch selesai.
 - Memindah tiket ke status di luar `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit file di worktree primary; membuka tab/workspace/project Orca baru; worktree di luar folder project.
 - Uninstall, `pm clear`, dan install app hanya di device yang dikunci agen itu sendiri (atau tidak dikunci siapa pun); agen yang device-nya diambil alih diblokir dari perintah device tanpa target.

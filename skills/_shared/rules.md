@@ -31,7 +31,7 @@ Management (SPV, Planner, Validator, Reviewer, Release) memutuskan dan berbicara
 ## Selalu diblokir (hook `guard.sh`)
 - `git push` ke remote selain `origin` (downstream/fork), termasuk `--tags` dan hapus branch. Pengecualian: tag versi `vX.Y.Z` yang ditulis eksplisit (tanpa force/hapus) boleh ke `origin` dan `upstream`.
 - Force-push atau hapus `master`/`main`/`develop`.
-- `rm -r`/`rm -rf` di luar folder project. Pengecualian: artefak build yang bisa dibuat ulang (`build`, `.gradle`, `.cxx`, `.kotlin`, `DerivedData`, `.build`) di worktree lain repo yang sama atau di bawah `~/AndroidStudioProjects` dan `~/StudioProjects`.
+- `rm -r`/`rm -rf` di luar folder project. Pengecualian: artefak build yang bisa dibuat ulang (`build`, `.gradle`, `.cxx`, `.kotlin`, `DerivedData`, `.build`) di worktree lain repo yang sama atau di bawah `~/AndroidStudioProjects` dan `~/StudioProjects`; isi `/tmp/qa/` (output uji sementara) bebas dihapus.
 - Memindah tiket Jira ke status yang tidak ada di `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit/Write file di worktree primary; berlaku untuk repo yang punya worktree tambahan (pola Orca).
 - Membuka terminal/agen sendiri (`orca terminal split`, `orca terminal create`, `orca agent launch`, `worker-start --agent`): agen tambahan selalu **teammate** (lihat Orkestrasi).

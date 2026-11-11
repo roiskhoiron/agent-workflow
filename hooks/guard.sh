@@ -238,6 +238,8 @@ ART = {"build", ".gradle", ".cxx", ".kotlin", "DerivedData", ".build"}
 c, root = sys.argv[1], os.path.realpath(sys.argv[2])
 wts = [os.path.realpath(w) for w in os.environ.get("WTS", "").splitlines() if w]
 def artifact(r):
+    if r.startswith(os.path.realpath("/tmp/qa") + os.sep):  # temporary QA test output
+        return True
     for w in wts:
         if r.startswith(w + os.sep) and ART & set(os.path.relpath(r, w).split(os.sep)):
             return True
@@ -249,7 +251,7 @@ for p in sys.argv[3:]:
     if not r.startswith(root + os.sep) and not artifact(r):
         print(p); break
 ' "$wd" "$root" "${paths[@]}" 2>/dev/null) || block "path rm -r tidak bisa diverifikasi (python3 gagal)."
-  [ -z "$bad" ] || block "rm -r di luar proyek ($root) dilarang: '$bad'. Hapus hanya path di dalam proyek, atau artefak build (build, .gradle, .cxx, .kotlin, DerivedData, .build) di worktree lain repo ini atau di ~/AndroidStudioProjects, ~/StudioProjects."
+  [ -z "$bad" ] || block "rm -r di luar proyek ($root) dilarang: '$bad'. Hapus hanya path di dalam proyek, atau artefak build (build, .gradle, .cxx, .kotlin, DerivedData, .build) di worktree lain repo ini atau di ~/AndroidStudioProjects, ~/StudioProjects; isi /tmp/qa bebas."
 }
 
 # Tokenize like a shell (quotes kept together); one line per simple command, tokens joined by \x1f.

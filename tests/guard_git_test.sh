@@ -102,6 +102,10 @@ mkdir -p "$T/StudioProjects/app/build" "$T/AndroidStudioProjects/a/src"
 HOME=$T check 0 "rm -rf $T/StudioProjects/app/build $T/StudioProjects/app/build/dd"
 HOME=$T check 2 "rm -rf $T/AndroidStudioProjects/a/src"
 HOME=$T check 2 "rm -rf $T/StudioProjects"
+# /tmp/qa: temporary QA output
+check 0 "rm -rf /tmp/qa/run1 /private/tmp/qa/x/y"
+check 2 "rm -rf /tmp/qa"
+check 2 "rm -rf /tmp/qa/../etc"
 
 # --- fix round 1 regressions ---
 check 2 'GIT_SSH_COMMAND="ssh -i k" git push upstream x'
