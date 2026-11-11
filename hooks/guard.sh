@@ -136,7 +136,7 @@ check_git_audit() {
   return 0
 }
 
-# audit mode: gh/glab read-only: read verbs only (view/list/...), api GET without fields
+# audit mode: glab read-only (gh is never blocked, user decision 2026-11-11): read verbs only (view/list/...), api GET without fields
 check_forge() {
   local a prev=''
   case ${1:-} in
@@ -398,7 +398,7 @@ check_Bash() {
           esac;;
         git) GSUB_OFF=-1; check_git "${w[@]:$((i+1))}"; gsub=$((i + 1 + GSUB_OFF));;
         orca) check_orca "${w[@]:$((i+1))}";;
-        gh|glab) [ -n "$AUDIT" ] && check_forge "${w[@]:$((i+1))}";;
+        glab) [ -n "$AUDIT" ] && check_forge "${w[@]:$((i+1))}";;
         rm) [ $i -eq $gsub ] || check_rm "${w[@]:$((i+1))}";;
         ANDROID_SERIAL=*) es=${w[$i]#*=};;
         adb|xcrun|android|maestro) dev=1; check_device "$c" "$es" "${w[@]:$((i+1))}";;
