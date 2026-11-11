@@ -127,7 +127,7 @@ X
 "$AGENT_WORKFLOW_DIR/bin/ios-ui.sh" <udid> "$W/steps.json" "$W/xcui-1"   # folder output baru tiap run
 ```
 - Aksi: `launch` (buka ulang app) / `activate` (lanjut dari layar sekarang, mis. sesudah Maestro), `tap`, `longPress` (+`duration`), `type` (+`into`), `swipe` up|down|left|right (+`on`), `assert`, `alert` (tombol alert sistem), `screenshot`, `elementShot` (+`of`), `hierarchy`, `measure` launch|scroll (maks satu per run).
-- Selector: `{"id": accessibilityIdentifier}`, `{"label": "persis"}`, `{"text": "mengandung"}`, opsional `index`. `timeout` (detik, default 10) per langkah.
+- Selector: `{"id": accessibilityIdentifier}`, `{"label": "persis"}`, `{"text": "mengandung"}`, `{"placeholder": "persis"}` (kolom isian kosong tanpa label), opsional `index`. `timeout` (detik, default 10) per langkah.
 - Hasil: `<nama>.png`, `<nama>.txt` (pohon UI lengkap), `<nama>-frames.json` (elemen + kotak dalam piksel screenshot), `metrics/*.csv`, `run.xcresult`. Exit ≠ 0 = ada langkah gagal, lihat `fail-step<N>.png`.
 - Simulator tanpa signing. iPhone fisik butuh Team ID dari project app:
   `IOS_TEAM=$(xcodebuild -showBuildSettings -project <App>.xcodeproj -scheme <Scheme> 2>/dev/null | awk '$1=="DEVELOPMENT_TEAM"{print $3; exit}') "$AGENT_WORKFLOW_DIR/bin/ios-ui.sh" ...` (CocoaPods: `-workspace <App>.xcworkspace`).

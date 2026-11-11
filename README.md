@@ -269,7 +269,7 @@ Dijalankan launchd tiap jam (`com.agentworkflow.housekeeping`). Gratis, jalan wa
    brew tap pact-foundation/pact-ruby-standalone && brew install pact-legacy
    ```
    Plus: Xcode (juga untuk XCUITest runner), Android SDK (`adb`, emulator, `android`), Claude Code, Orca. Untuk mode tim: `/config` → Teammate mode → `auto` (lihat [Tim agen](#tim-agen)).
-2. Plugin Claude Code: `superpowers` dan `ponytail` (lewat `/plugin`); `kotlin-agent-skills` opsional untuk project Kotlin/KMP. Skill pendukung lain ([daftar](#skill-pendukung)) ada di `~/.claude/skills`: `orca-cli`, `orca-computer-use`, `orchestration` (symlink ke `~/.agents/skills`, dari Orca), `android-cli`, `graphify`.
+2. Plugin Claude Code: `superpowers` dan `ponytail` (lewat `/plugin`); `kotlin-agent-skills` opsional untuk project Kotlin/KMP. Skill pendukung lain ([daftar](#skill-pendukung)) ada di `~/.claude/skills`: `orca-cli`, `orca-computer-use`, `orchestration` (symlink ke `~/.agents/skills`, dari Orca), `android-cli` (`android init` memasang skill default), `graphify` (`uv tool install graphifyy && graphify install --platform claude`).
 3. Konektor claude.ai: **Atlassian** (Jira) dan **Claude Docs**.
 4. Login CLI: `gh auth login`, `glab auth login`, `firebase login`.
 5. Pasang dan cek:

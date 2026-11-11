@@ -30,6 +30,9 @@ final class RunnerTests: XCTestCase {
             app = XCUIApplication(bundleIdentifier: id); app.activate()
         } else if let sel = s["tap"] as? [String: Any] {
             try find(sel, timeout).tap()
+        } else if let p = s["tapAt"] as? [Double], p.count == 2 {
+            // label di dalam cell kadang tanpa hit point (Activation point invalid): tap koordinat point dari hierarchy
+            try current().coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: p[0], dy: p[1])).tap()
         } else if let sel = s["longPress"] as? [String: Any] {
             try find(sel, timeout).press(forDuration: s["duration"] as? Double ?? 1)
         } else if let text = s["type"] as? String {
@@ -68,14 +71,15 @@ final class RunnerTests: XCTestCase {
         return app
     }
 
-    // sel: {"id": accessibilityIdentifier} | {"label": label persis} | {"text": label/value mengandung, tanpa beda huruf besar}
+    // sel: {"id": accessibilityIdentifier} | {"label": label persis} | {"text": label/value mengandung, tanpa beda huruf besar} | {"placeholder": placeholder persis}
     private func find(_ sel: [String: Any], _ timeout: Double) throws -> XCUIElement {
         let all = try current().descendants(matching: .any)
         let q: XCUIElementQuery
         if let id = sel["id"] as? String { q = all.matching(identifier: id) }
         else if let l = sel["label"] as? String { q = all.matching(NSPredicate(format: "label == %@", l)) }
         else if let t = sel["text"] as? String { q = all.matching(NSPredicate(format: "label CONTAINS[c] %@ OR value CONTAINS[c] %@", t, t)) }
-        else { throw StepError(description: "selector harus id|label|text") }
+        else if let p = sel["placeholder"] as? String { q = all.matching(NSPredicate(format: "placeholderValue == %@", p)) }
+        else { throw StepError(description: "selector harus id|label|text|placeholder") }
         let el = q.element(boundBy: sel["index"] as? Int ?? 0)
         guard el.waitForExistence(timeout: timeout) else { throw StepError(description: "elemen \(sel) tidak ditemukan") }
         return el
