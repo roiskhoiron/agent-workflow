@@ -226,6 +226,20 @@ bin/ios-ui.sh <udid> steps.json /tmp/qa/PROJ-1234/xcui-1
 | Orca CLI | Workspace, worktree, panel teammate (lewat plugin agent view Orca) |
 | Atlassian MCP / Claude Docs MCP | Baca & komentar Jira / tulis laporan |
 
+### Skill pendukung
+Selain empat perintah di repo ini, agen memakai skill yang terpasang di `~/.claude/skills` atau sebagai plugin Claude Code. Skill ini tidak ada di repo; pasang terpisah (lihat [Pasang di komputer lain](#pasang-di-komputer-lain-macos)).
+
+| Skill | Dipakai untuk |
+| --- | --- |
+| `android-cli` | Android CLI Google: pasang/jalankan APK, inspeksi layout, input, emulator, docs Android; cadangan Maestro |
+| `orca-cli` | Worktree, terminal, dan browser Orca; worktree tiket dan panel teammate |
+| `orchestration` | Worker Orca terpisah (mis. Codex) dengan tugas dan hasil yang dilaporkan balik |
+| `orca-computer-use` | Mengendalikan jendela app di Mac bila tidak ada jalur CLI |
+| `graphify` | Peta pengetahuan codebase (`/graphify`) untuk pertanyaan arsitektur dan relasi file |
+| `superpowers` (plugin) | Fitur besar: brainstorming → rencana → TDD → review → verifikasi |
+| `ponytail` (plugin) | Fix kecil dengan perubahan sesedikit mungkin; juga review dan audit kualitas |
+| `kotlin-agent-skills` (plugin) | Migrasi dan performa build Kotlin/KMP (AGP 9, CocoaPods → SPM, Kotlin/Native) |
+
 ### MCP yang dipakai
 MCP = konektor yang membuat Claude bisa memakai layanan luar. Workflow ini memakai dua, keduanya dipasang sebagai konektor di claude.ai:
 
@@ -255,7 +269,7 @@ Dijalankan launchd tiap jam (`com.agentworkflow.housekeeping`). Gratis, jalan wa
    brew tap pact-foundation/pact-ruby-standalone && brew install pact-legacy
    ```
    Plus: Xcode (juga untuk XCUITest runner), Android SDK (`adb`, emulator, `android`), Claude Code, Orca. Untuk mode tim: `/config` → Teammate mode → `auto` (lihat [Tim agen](#tim-agen)).
-2. Plugin Claude Code: `superpowers` dan `ponytail` (lewat `/plugin`).
+2. Plugin Claude Code: `superpowers` dan `ponytail` (lewat `/plugin`); `kotlin-agent-skills` opsional untuk project Kotlin/KMP. Skill pendukung lain ([daftar](#skill-pendukung)) ada di `~/.claude/skills`: `orca-cli`, `orca-computer-use`, `orchestration` (symlink ke `~/.agents/skills`, dari Orca), `android-cli`, `graphify`.
 3. Konektor claude.ai: **Atlassian** (Jira) dan **Claude Docs**.
 4. Login CLI: `gh auth login`, `glab auth login`, `firebase login`.
 5. Pasang dan cek:
