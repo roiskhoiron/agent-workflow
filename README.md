@@ -129,7 +129,7 @@ Detail lengkap tiap langkah: `skills/<perintah>/SKILL.md`. Aturan bersama: [skil
 | Agen | Nama | Model | Tugas | Tidak boleh |
 | --- | --- | --- | --- | --- |
 | SPV | Pak Darmo | opus | bagi tugas, jatah device, putuskan selesai, publikasi laporan | menulis kode produk |
-| Planner | Pak Sastro | fable (Fable 5.2) | rencana kerja + test case tiket mode tim, analisis saat pengerjaan macet; hanya atas panggilan SPV | kode produk, Jira, device, memerintah agen lain |
+| Planner | Pak Sastro | `claude-fable-5-2` (Fable 5.2) | rencana kerja + test case tiket mode tim, analisis saat pengerjaan macet; hanya atas panggilan SPV | kode produk, Jira, device, memerintah agen lain |
 | Validator | Kang Jajang | opus | `/validate-tiket` | menulis kode produk |
 | Coder | Maman, Ujang, Tarjo, Asep, Parmin | sonnet | kode + tes (TDD) di branch tiket | Jira, push, upload |
 | Reviewer | Mbah Karto | opus | review performa & risiko crash | review kode sendiri |

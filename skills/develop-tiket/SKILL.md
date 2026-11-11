@@ -33,7 +33,7 @@ flowchart LR
    - **Tim:** tiap worker = **teammate** (tool Agent dengan `name: "<Nama>-<Label><n>"`, `subagent_type: <peran>`, `model` dari tabel); tampil sebagai panel split di tab SPV. Agen yang sama dipakai ulang lewat SendMessage, teammate yang tugasnya habis dihentikan; lengkapnya di `rules.md` → Orkestrasi. Teammate mode mati → tanya user (`rules.md`):
      | Peran | Model | Catatan |
      |---|---|---|
-     | Planner | `claude-fable-5-2` (`model: "fable"`) | hanya-baca; dipanggil di langkah 3 dan saat eskalasi, dihentikan setelah membalas |
+     | Planner | `claude-fable-5-2` (jangan isi `model`: frontmatter yang berlaku) | hanya-baca; dipanggil di langkah 3 dan saat eskalasi, dihentikan setelah membalas |
      | Coder | `claude-sonnet-5-5` | di worktree tiketnya; coder ke-2+ di tiket yang sama hanya bila file/modul terpisah, sebut batasnya di tugas |
      | Reviewer | `claude-opus-5-5` | bukan coder tiket itu; baca diff branch tiket |
      | QA (2-3) | `claude-sonnet-5-5` | uji build batch |

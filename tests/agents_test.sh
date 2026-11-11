@@ -5,7 +5,7 @@ REPO="$(cd "$(dirname "$0")/.." && pwd -P)"
 # fm FILE KEY -> value of KEY in the leading --- frontmatter block (empty if absent)
 fm() { awk -v k="$2" 'NR==1&&$0!="---"{exit} NR>1&&$0=="---"{exit} NR>1&&index($0,k": ")==1{print substr($0,length(k)+3)}' "$1"; }
 
-for pair in spv:opus planner:fable validator:opus reviewer:opus release:haiku coder:sonnet qa:sonnet auditor:opus analis:opus; do
+for pair in spv:opus planner:claude-fable-5-2 validator:opus reviewer:opus release:haiku coder:sonnet qa:sonnet auditor:opus analis:opus; do
   n=${pair%%:*} m=${pair#*:} f="$REPO/agents/$n.md"
   assert_eq yes "$([ -f "$f" ] && echo yes || echo no)" "agents/$n.md exists"
   [ -f "$f" ] || continue
