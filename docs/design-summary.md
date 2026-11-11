@@ -16,9 +16,10 @@ Todo: Validator (laporan + komentar). In Progress: SPV+Coder+QA. RTR: Release (P
 
 ## Tim agen
 Management memutuskan dan berbicara ke luar (Jira, Docs, git remote, Firebase/TestFlight); development hanya kode dan device. Mode satu agen tetap ikut larangan sama.
-Hierarki: Kamu -> SPV -> Coder x2-5, QA x2-3; Coder -> Reviewer -> Release; QA -> SPV.
+Hierarki: Kamu -> SPV (penasihat: Planner) -> Coder x2-5, QA x2-3; Coder -> Reviewer -> Release; QA -> SPV.
 | Agen | Model | Tugas | Tidak boleh |
 | SPV | Opus | bagi tugas, jatah device, putuskan selesai | kode produk |
+| Planner | Fable 5.2 (`claude-fable-5-2`) | rencana + test case tiket mode tim, analisis eskalasi; atas panggilan SPV | kode produk, Jira, device, memerintah agen lain |
 | Validator | Opus | /validate-tiket | kode produk |
 | Reviewer | Opus | performa & crash sebelum PR | review kode sendiri |
 | Release | Haiku | nomor build, build+upload, PR/MR, komentar & geser tiket | Done, upload prod tanpa izin |
@@ -39,7 +40,7 @@ Tanda screenshot: kotak merah + label merah teks putih berisi kode AC; posisi da
 Keputusan parsial boleh; TC butuh device lebih dari tersedia = Tertahan.
 
 ## /develop-tiket
-1 SPV cek requirement + tiket terkait/blocking -> 2 SPV dokumen rencana + test case (Claude Docs) -> 3 Coder kode+tes TDD, branch feature/ fix/ hotfix/ docs/ chore/ di downstream -> 4 Reviewer performa/crash (revisi loop ke 3) -> 5 QA uji Maestro/Schemathesis/Pact, Claude Docs + screenshot -> 6 Release build dev/beta/prod ke Firebase/TestFlight -> 7 Release push downstream + PR/MR ke upstream -> 8 komentar Jira semua link -> 9 geser Ready To Review.
+1 SPV cek requirement + tiket terkait/blocking -> 2 dokumen rencana + test case (Claude Docs; mode tim ditulis Planner, diperiksa SPV) -> 3 Coder kode+tes TDD, branch feature/ fix/ hotfix/ docs/ chore/ di downstream -> 4 Reviewer performa/crash (revisi loop ke 3) -> 5 QA uji Maestro/Schemathesis/Pact, Claude Docs + screenshot -> 6 Release build dev/beta/prod ke Firebase/TestFlight -> 7 Release push downstream + PR/MR ke upstream -> 8 komentar Jira semua link -> 9 geser Ready To Review.
 Tiket kecil: satu agen, langkah 2 catatan singkat.
 `--batch` (default): semua tiket satu rencana, satu branch batch, satu build, QA di build itu; build hanya setelah semua tiket lolos review atau dikeluarkan, perbaikan pasca-QA dikumpulkan lalu satu build ulang. `--separate`: tiap tiket rencana, build, QA, laporan sendiri. Terpisah dari `--solo`/`--tim`.
 
@@ -70,8 +71,8 @@ launchd lokal: harian 03:00, mingguan Minggu 03:30, darurat disk < 50 GB. Jika b
 DerivedData >3 hari (mingguan semua); APK/AAB/IPA di build/ >7 hari; Gradle stop daemon (mingguan cache >14 hari); ~/.konan >30 hari; DeviceSupport lama, simulator unavailable; cache CocoaPods/npm/Homebrew; branch downstream sudah merge; Archives hanya jika dSYM otomatis ter-upload: >30 hari, 3 Archive prod terakhir disimpan; jika tidak, tawarkan setup.
 
 ## Keputusan Claude dan yang masih terbuka
-Keputusan Claude: Reviewer di management; Release terpisah dari SPV; Haiku untuk Release/Housekeeping; batas 50 GB & hari; tag tidak dibuat agen; kotak dari koordinat; launchd lokal.
-Terbuka: format judul versi rilis; peran Fable 5.1; API key ASC (opsional); izin USB Android; token GitHub MCP.
+Keputusan Claude: Reviewer di management; Release terpisah dari SPV; Haiku untuk Release/Housekeeping; batas 50 GB & hari; Planner pakai Fable 5.2 (ID penuh di frontmatter, SPV tidak mengisi `model`); tag tidak dibuat agen; kotak dari koordinat; launchd lokal.
+Terbuka: format judul versi rilis; API key ASC (opsional); izin USB Android; token GitHub MCP.
 
 ## Tambahan (disetujui 2026-10-28)
 - Judul tiket rilis: `[release-request] …` / `[hotfix-release] …` (pola versi setelah prefix masih terbuka).
