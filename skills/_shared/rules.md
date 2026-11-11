@@ -31,7 +31,7 @@ Management (SPV, Planner, Validator, Reviewer, Release) memutuskan dan berbicara
 ## Selalu diblokir (hook `guard.sh`)
 - `git push` ke remote selain `origin` (downstream/fork), termasuk `--tags` dan hapus branch. Pengecualian: tag versi `vX.Y.Z` yang ditulis eksplisit (tanpa force/hapus) boleh ke `origin` dan `upstream`.
 - Force-push atau hapus `master`/`main`/`develop`.
-- `rm -r`/`rm -rf` di luar folder project.
+- `rm -r`/`rm -rf` di luar folder project. Pengecualian: artefak build yang bisa dibuat ulang (`build`, `.gradle`, `.cxx`, `.kotlin`, `DerivedData`, `.build`) di worktree lain repo yang sama atau di bawah `~/AndroidStudioProjects` dan `~/StudioProjects`.
 - Memindah tiket Jira ke status yang tidak ada di `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit/Write file di worktree primary; berlaku untuk repo yang punya worktree tambahan (pola Orca).
 - Membuka terminal/agen sendiri (`orca terminal split`, `orca terminal create`, `orca agent launch`, `worker-start --agent`): agen tambahan selalu **teammate** (lihat Orkestrasi).
@@ -68,6 +68,7 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 - **Cadangan (C):** tidak aman dibagi (coder menyentuh file yang sama, worktree dipakai batch lain) → satu agen (solo) saja, atau berhenti dan tanya.
 - **Kunci checkout:** sebelum mengubah branch/file di checkout domain atau worktree tiket, `AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" acquire checkout:<path> <KODE atau domain>`; dipegang batch lain → cadangan C. Lepas saat selesai/berhenti.
 - **Hapus worktree tiket** setelah tiket Ready To Review, hanya yang dibuat batch ini, bila `git -C <worktree> status --porcelain` kosong dan `git -C <worktree> log @{u}..` kosong (sudah di-push): `git -C <checkout domain> worktree remove ../<repo>-<nomor>` (tanpa `--force`; branch tetap ada). Syarat tidak terpenuhi → biarkan dan sebut di laporan. Checkout domain dan worktree buatan user tidak pernah dihapus.
+- **Bersihkan artefak build** worktree tempat agen bekerja setelah tiket Ready To Review (worktree tiket yang tidak jadi dihapus) atau setelah batch selesai (checkout domain): Android `build/` (root dan tiap modul), iOS hanya DerivedData (`build/dd`), path ditulis literal. Syarat: tidak ada build berjalan (`pgrep -f 'xcodebuild|GradleWrapperMain'` di panggilan terpisah, sebelum menghapus) dan kunci `build:heavy` tidak dipegang. Tidak dihapus: source, `Pods`, `.git`, `.xcarchive` (berisi dSYM), IPA/APK yang belum di-upload.
 - **Dilarang (juga guard):** membuat project/repo/workspace Orca baru (`orca worktree create` dari `/develop-tiket` dan `/validate-tiket`, `orca repo add`, `orca project setup-*`, `--worktree new-child|new-top-level`, `--no-parent`), worktree di folder sementara atau di luar folder project, `git worktree remove --force`, `git worktree move`. Pengecualian: `/rilis-tiket` membuat anak rilis dengan `orca worktree create --parent-worktree current`.
 
 Orkestrasi (SPV sebagai lead): tiap worker = **teammate** Claude Code (agent teams). Orca menampilkannya sebagai panel split di tab SPV dengan label `@<nama>` tepat di atas kolom input; tidak ada panel atau tab yang dibuka sendiri.

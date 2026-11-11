@@ -86,6 +86,23 @@ check 0 'rm -rf build' "$W/build/.."
 check 0 'rm -rf x' "$T"   # cwd not a repo: root = cwd
 check 2 'rm -rf ../y' "$T"
 
+# sibling worktree of the same repo: build artifacts only
+git -C "$W" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
+git -C "$W" worktree add -q "$T/work-123" -b fix/PROJ-123
+mkdir -p "$T/work-123/app/build/x" "$T/work-123/src" "$T/other/build"
+check 0 "rm -rf $T/work-123/app/build"
+check 0 "rm -rf $T/work-123/build/dd $T/work-123/.gradle"
+check 0 'rm -rf ../work-123/app/build/x'
+check 2 "rm -rf $T/work-123/src"
+check 2 "rm -rf $T/work-123"
+check 2 "rm -rf $T/work-123/app/build $T/work-123/src"
+check 2 "rm -rf $T/other/build"
+# ~/AndroidStudioProjects, ~/StudioProjects: build artifacts from any session
+mkdir -p "$T/StudioProjects/app/build" "$T/AndroidStudioProjects/a/src"
+HOME=$T check 0 "rm -rf $T/StudioProjects/app/build $T/StudioProjects/app/build/dd"
+HOME=$T check 2 "rm -rf $T/AndroidStudioProjects/a/src"
+HOME=$T check 2 "rm -rf $T/StudioProjects"
+
 # --- fix round 1 regressions ---
 check 2 'GIT_SSH_COMMAND="ssh -i k" git push upstream x'
 check 2 'timeout 60 git push upstream x'

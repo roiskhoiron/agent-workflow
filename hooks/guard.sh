@@ -212,7 +212,7 @@ check_orca() {
 
 # rm -r/-R/--recursive: every target must be strictly inside the project root
 check_rm() {
-  local rec='' endopt='' paths=() a bad py
+  local rec='' endopt='' paths=() a bad py wts
   for a; do
     if [ -z "$endopt" ]; then
       case $a in
@@ -230,17 +230,26 @@ check_rm() {
     case $a in *'$'*|*'`'*|'~'*|*'{}'*) block "rm -r dengan variabel/path tak pasti ('$a') dilarang. Tulis path literal di dalam proyek.";; esac
   done
   [ ${#paths[@]} -gt 0 ] || block "rm -r tanpa path literal (mis. lewat xargs) dilarang. Tulis path di dalam proyek secara eksplisit."
-  bad=$("$PY" -c '
+  # other worktrees of this repo + the two project folders (user decision 2026-11-11): only rebuildable build artifacts
+  wts=$(git -C "$root" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p'; printf '%s\n' "$HOME/AndroidStudioProjects" "$HOME/StudioProjects")
+  bad=$(WTS="$wts" "$PY" -c '
 import os, sys
+ART = {"build", ".gradle", ".cxx", ".kotlin", "DerivedData", ".build"}
 c, root = sys.argv[1], os.path.realpath(sys.argv[2])
+wts = [os.path.realpath(w) for w in os.environ.get("WTS", "").splitlines() if w]
+def artifact(r):
+    for w in wts:
+        if r.startswith(w + os.sep) and ART & set(os.path.relpath(r, w).split(os.sep)):
+            return True
+    return False
 for p in sys.argv[3:]:
     n = os.path.normpath(os.path.join(c, p))
     # trailing slash makes rm follow a symlink, so check its target
     r = os.path.realpath(n) if p.endswith("/") else os.path.join(os.path.realpath(os.path.dirname(n)), os.path.basename(n))
-    if not r.startswith(root + os.sep):
+    if not r.startswith(root + os.sep) and not artifact(r):
         print(p); break
 ' "$wd" "$root" "${paths[@]}" 2>/dev/null) || block "path rm -r tidak bisa diverifikasi (python3 gagal)."
-  [ -z "$bad" ] || block "rm -r di luar proyek ($root) dilarang: '$bad'. Hapus hanya path di dalam proyek."
+  [ -z "$bad" ] || block "rm -r di luar proyek ($root) dilarang: '$bad'. Hapus hanya path di dalam proyek, atau artefak build (build, .gradle, .cxx, .kotlin, DerivedData, .build) di worktree lain repo ini atau di ~/AndroidStudioProjects, ~/StudioProjects."
 }
 
 # Tokenize like a shell (quotes kept together); one line per simple command, tokens joined by \x1f.
