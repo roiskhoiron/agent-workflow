@@ -40,7 +40,7 @@ Pilihan `/develop-tiket`:
 | Flag | Artinya |
 | --- | --- |
 | `--solo` | Satu agen mengerjakan semuanya |
-| `--tim` | SPV membagi kerja ke Coder, Reviewer, QA, Release sebagai teammate (tiap agen panel sendiri) |
+| `--tim` | Planner menulis rencana + test case, lalu SPV membagi kerja ke Coder, Reviewer, QA, Release sebagai teammate (tiap agen panel sendiri) |
 | (tanpa `--solo/--tim`) | SPV memilih: satu tiket kecil = solo, selain itu tim |
 | `--batch` (default) | Semua tiket digabung: satu rencana, **satu build**, QA bersama di build itu. Proses berat jalan sekali untuk semua tiket |
 | `--separate` | Tiap tiket jalan sendiri: rencana, build, QA, laporan masing-masing |
@@ -129,6 +129,7 @@ Detail lengkap tiap langkah: `skills/<perintah>/SKILL.md`. Aturan bersama: [skil
 | Agen | Nama | Model | Tugas | Tidak boleh |
 | --- | --- | --- | --- | --- |
 | SPV | Pak Darmo | opus | bagi tugas, jatah device, putuskan selesai, publikasi laporan | menulis kode produk |
+| Planner | Pak Sastro | fable (Fable 5.2) | rencana kerja + test case tiket mode tim, analisis saat pengerjaan macet; hanya atas panggilan SPV | kode produk, Jira, device, memerintah agen lain |
 | Validator | Kang Jajang | opus | `/validate-tiket` | menulis kode produk |
 | Coder | Maman, Ujang, Tarjo, Asep, Parmin | sonnet | kode + tes (TDD) di branch tiket | Jira, push, upload |
 | Reviewer | Mbah Karto | opus | review performa & risiko crash | review kode sendiri |
@@ -246,7 +247,7 @@ MCP = konektor yang membuat Claude bisa memakai layanan luar. Workflow ini memak
 | MCP | Gunanya | Dipakai oleh | Fungsi yang dipanggil |
 | --- | --- | --- | --- |
 | **Atlassian** (Jira) | Baca tiket, komentar, pindah status, buat tiket rilis | Validator, SPV, Release, Auditor (baca saja) | `getJiraIssue`, `searchJiraIssuesUsingJql`, `addCommentToJiraIssue`, `transitionJiraIssue`, `getTransitionsForJiraIssue`, `createJiraIssue` + `createIssueLink` (tiket rilis), `atlassianUserInfo` (cek koneksi) |
-| **Claude Docs** | Laporan validasi, rencana + test case, laporan uji, laporan audit (bergambar) | Validator, SPV, `/audit-issue` | `batch` (buat/isi dokumen), unggah screenshot |
+| **Claude Docs** | Laporan validasi, rencana + test case, laporan uji, laporan audit (bergambar) | Validator, SPV, Planner, `/audit-issue` | `batch` (buat/isi dokumen), unggah screenshot |
 
 Bukan bagian workflow (boleh terpasang, tidak dibutuhkan): GitHub MCP (PR dibuat lewat `gh` CLI), context7 (docs library untuk coding biasa). Guard ikut memeriksa panggilan Atlassian: transisi di luar daftar ditolak, dan di mode audit semua penulisan Jira diblokir.
 

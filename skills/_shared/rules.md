@@ -13,6 +13,7 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
 | Agen | Model (Orca `--model`) | Tugas | Tidak boleh |
 |---|---|---|---|
 | SPV | opus (`claude-opus-5-5`) | bagi tugas, jatah device, putuskan selesai | kode produk |
+| Planner | fable (`claude-fable-5-2`) | rencana + test case tiket mode tim, analisis eskalasi; atas panggilan SPV | kode produk, Jira, device, memerintah agen lain |
 | Validator | opus (`claude-opus-5-5`) | /validate-tiket | kode produk |
 | Reviewer | opus (`claude-opus-5-5`) | performa & crash sebelum PR | review kode sendiri |
 | Release | haiku (`claude-haiku-5-5`) | nomor build, build+upload, PR/MR, komentar & geser tiket | Done, upload prod tanpa izin |
@@ -21,7 +22,7 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
 | Auditor | opus (`claude-opus-5-5`) | /audit-issue: kode, log, reproduksi | menulis repo/Jira |
 | Analis | opus (`claude-opus-5-5`) | /audit-issue: lampiran | menulis repo/Jira |
 
-Management (SPV, Validator, Reviewer, Release) memutuskan dan berbicara ke luar: Jira, Claude Docs, git remote, Firebase/TestFlight. Development (Coder, QA) hanya kode dan device. Housekeeping = skrip shell, tanpa agen. Model diubah di `~/.claude/agents/<peran>.md`.
+Management (SPV, Planner, Validator, Reviewer, Release) memutuskan dan berbicara ke luar: Jira, Claude Docs, git remote, Firebase/TestFlight. Development (Coder, QA) hanya kode dan device. Planner hanya penasihat SPV: menulis dokumen rencana di Claude Docs, tidak berbicara ke agen lain atau ke luar. Housekeeping = skrip shell, tanpa agen. Model diubah di `~/.claude/agents/<peran>.md`.
 
 ## Mode kerja
 - **Diawasi**: sesi biasa, user menyetujui izin.
@@ -44,7 +45,7 @@ Jangan mencari jalan memutar. Jika diblokir, laporkan pesannya ke SPV/user.
 2. Sebelum membuat branch rilis/hotfix.
 3. Nomor build tidak jelas (`build-number.sh` keluar dengan kode 3).
 4. Kredensial tidak ditemukan.
-5. Dua fix hotfix bentrok.
+5. Dua fix hotfix bentrok (mode tim: SPV minta analisis opsi dari Planner dulu, lalu tanya).
 6. `build:heavy` dipakai tiket Jira lain: tunggu atau dahulukan tugas kita (cara di `devices.md` → Build berat).
 
 Cara tanya:
@@ -71,7 +72,7 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 
 Orkestrasi (SPV sebagai lead): tiap worker = **teammate** Claude Code (agent teams). Orca menampilkannya sebagai panel split di tab SPV dengan label `@<nama>` tepat di atas kolom input; tidak ada panel atau tab yang dibuka sendiri.
 - **Syarat:** sesi SPV jalan dengan teammate mode: `claude --teammate-mode auto`, atau sekali di `/config` → Teammate mode = auto. Tool Agent tanpa parameter `name` = mode itu mati → tanya user: buka ulang sesi dengan teammate mode (saran), atau lanjut solo.
-- **Panggil:** tool Agent dengan `name: "<Nama>-<Label><n>"` (mis. `Paijo-QA1`, tabel di bawah), `subagent_type: <peran>` (`coder`, `reviewer`, `qa`, `release`, `auditor`, `analis`) dan `model` sesuai peran. Prompt: "Ikuti `~/.claude/agents/<peran>.md`" + tugas (kode tiket, worktree, batas file, jatah device/akun, folder laporan).
+- **Panggil:** tool Agent dengan `name: "<Nama>-<Label><n>"` (mis. `Paijo-QA1`, tabel di bawah), `subagent_type: <peran>` (`planner`, `coder`, `reviewer`, `qa`, `release`, `auditor`, `analis`) dan `model` sesuai peran. Prompt: "Ikuti `~/.claude/agents/<peran>.md`" + tugas (kode tiket, worktree, batas file, jatah device/akun, folder laporan).
 - **Lapor & tanya:** teammate mengirim hasil dan pertanyaan ke SPV lewat SendMessage; pesan datang sendiri, tidak perlu dipantau. Pakai daftar tugas bersama tim untuk melacak tugas per tiket.
 - **Pakai ulang:** tugas lanjutan untuk agen yang sama (revisi dari Reviewer, tiket berikutnya untuk peran itu) → SendMessage ke nama yang sama, jangan panggil nama itu lagi; tugas tiket lain → minta dia mulai bersih dulu. Tidak pernah ada dua `Maman-Programmer1`. Pekerjaan paralel → nama berikutnya.
 - **Hentikan:** peran yang tidak punya tugas lagi di batch ini (Coder setelah lolos review dan, di `--batch`, di-merge ke branch batch; Reviewer setelah review terakhir; QA setelah laporannya diterima) → minta teammate itu berhenti (shutdown) saat itu juga; panelnya tertutup sendiri. Akhir batch atau berhenti lebih awal → hentikan semua teammate batch ini.
@@ -81,6 +82,7 @@ Orkestrasi (SPV sebagai lead): tiap worker = **teammate** Claude Code (agent tea
 | Peran | Label | Nama berurutan |
 |---|---|---|
 | SPV | SPV | Pak Darmo |
+| Planner | Planner | Pak Sastro |
 | Validator | Validator | Kang Jajang |
 | Coder | Programmer | Maman, Ujang, Tarjo, Asep, Parmin |
 | Reviewer | Reviewer | Mbah Karto |
