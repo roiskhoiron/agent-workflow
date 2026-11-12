@@ -20,6 +20,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, lalu sesuai kebut
    - Worker: teammate, bukan tab atau panel buatan sendiri: tool Agent dengan `name: "<Nama>-<Label><n>"` (tabel "Nama agen" di `rules.md`, mis. `Paijo-QA1`), `subagent_type: <peran>`, `model` sesuai peran (lengkapnya `rules.md` → Orkestrasi). Tugas lanjutan untuk agen yang sama → SendMessage ke nama itu, jangan panggil dua kali. Peran yang tugasnya habis → hentikan teammate itu saat itu juga. Di prompt tulis "Ikuti `~/.claude/agents/<peran>.md`" + batas file.
    - Keberatan Coder/QA/Reviewer terhadap rencana datang ke kamu, bukan ke Planner; pesan antar agen hanya membawa link rencana + nomor rujukan.
    - Tidak aman dibagi → solo (`rules.md`, cadangan C).
+   - Tugas UI: sertakan mockup/desain di prompt Coder (link Figma, lampiran tiket, screenshot acuan; Coder tidak bisa membaca Jira/Docs). Pertanyaan desain Coder dijawab dari tiket/lampiran; tidak ada jawabannya → tanya user, jangan biarkan Coder menebak.
 6. Bagi jatah device dan akun uji (owner `<KODE>-<peran><n>`): virtual dulu, `--physical` hanya untuk TC `(fisik)` (`devices.md`); pastikan tiap agen melepas kuncinya.
 7. Alur: Coder → Reviewer (revisi kembali ke Coder) → QA → kamu. Laporan dan pertanyaan worker datang lewat pesan teammate.
 8. Terima laporan QA (`${TMPDIR:-/tmp}/qa/<KODE>/`), publikasikan ke Claude Docs sesuai `report-format.md`.
