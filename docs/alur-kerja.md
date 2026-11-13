@@ -77,6 +77,7 @@ flowchart TD
   | Layak | Lanjut |
 
   Dokumen yang berubah sejak validasi dan menyentuh AC, desain, atau kontrak → SPV menyebut perbedaannya dan bertanya. Link dokumen terbaru (**Acuan tiket**) dibawa ke rencana, Coder, dan QA.
+- **Basecode:** tiap tiket bercabang dari base **terbaru di remote** (SPV `git fetch` dulu): `upstream/develop` (atau base di `CLAUDE.md`), atau `origin/release/...`/`origin/hotfix/...` bila tiket ter-link tiket rilis. Base + hash commit dicatat di rencana. Worktree tiket lama yang tertinggal dari base → SPV bertanya rebase/merge atau lanjut.
 - Di `--batch`, build baru jalan setelah **semua** tiket lolos review (atau dikeluarkan dari batch dengan alasan tertulis). Perbaikan setelah QA dikumpulkan dulu, baru satu build ulang.
 - Tiket yang macet dikeluarkan dari batch dan dilaporkan, tidak dijalankan sendiri diam-diam.
 - Dengan `--uat`, device fisik dipindah ke kamu (kunci `human-<KODE>`); crash selama UAT mengembalikan tiket ke Coder. Pemantauan log gagal → SPV memberi tahu, dan hasil UAT mengikuti laporanmu.
