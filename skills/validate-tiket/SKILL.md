@@ -37,9 +37,17 @@ flowchart LR
 7. **Komentar Jira** (`addCommentToJiraIssue`): baris pertama = link laporan, lalu keputusan: **Layak** / **Layak dengan catatan** / **Tidak layak** + alasan singkat.
 8. **Transisi:** Layak / Layak dengan catatan → `transitionJiraIssue` ke In Progress dengan id dari `jira-transitions.json`. Tidak layak → tetap Todo. Lepas kunci device/akun (`AGENT_LOCK_PID=$PPID ... device-lock.sh release ...`).
 9. **Mode tim** (menggantikan langkah 4–5, SPV tetap menulis laporan, komentar, transisi):
-   - Panggil teammate paralel (tool Agent, `name` dari tabel "Nama agen", `subagent_type` = peran, `model` sesuai tabel di `rules.md`; Spesialis eskalasi: jangan isi `model`): PdM, Product Designer (tiket UI/bug UI), Contract Runner (tiket menyentuh API), HoE, PjM. Brief: KODE, ringkasan tiket + AC, lokasi dokumen + ref, worktree/repo, jatah device/akun (bug), folder `${TMPDIR:-/tmp}/validate/<KODE>/`. Prompt: "Ikuti `~/.claude/agents/<peran>.md`".
+   - Panggil teammate paralel (tool Agent, `name` dari tabel "Nama agen" di `rules.md`, `subagent_type` = peran, `model` dari tabel): PdM, Product Designer (tiket UI/bug UI), Contract Runner (tiket menyentuh API), HoE, PjM.
+     | Peran | Model | Catatan |
+     |---|---|---|
+     | PdM | `claude-sonnet-5-5` | dokumen business discovery |
+     | Product Designer | `claude-sonnet-5-5`; eskalasi `claude-opus-5-5` | tiket UI/bug UI |
+     | Contract Runner | `claude-sonnet-5-5` | tiket yang menyentuh API; hasil diteruskan ke HoE |
+     | HoE | `claude-opus-5-5` | selalu di mode tim |
+     | PjM | `claude-sonnet-5-5` | selalu di mode tim |
+     | Spesialis eskalasi | `claude-fable-5-2` (jangan isi `model`: frontmatter yang berlaku) | hanya saat pemicu; dihentikan setelah membalas | Brief: KODE, ringkasan tiket + AC, lokasi dokumen + ref, worktree/repo, jatah device/akun (bug), folder `${TMPDIR:-/tmp}/validate/<KODE>/`. Prompt: "Ikuti `~/.claude/agents/<peran>.md`".
    - Hasil Contract Runner diteruskan ke HoE. Bug UI → Product Designer reproduksi; bug logika/API → HoE.
-   - **Eskalasi Product Designer ke opus:** reproduksi bug UI gagal/rumit setelah satu putaran → panggil ulang dengan `model: opus`.
+   - **Eskalasi Product Designer ke opus:** reproduksi bug UI gagal/rumit setelah satu putaran → panggil ulang dengan `model: claude-opus-5-5`.
    - **Spesialis eskalasi (`eskalasi`, fable) hanya bila:** bug logika gagal direproduksi HoE setelah satu putaran; temuan HoE ambigu (bug atau disengaja); tiket berlabel high-risk (pembayaran, autentikasi, perubahan skema data); konflik antar-agen yang tidak bisa kamu selesaikan. Sebut pemicunya di brief.
    - Gabungkan semua `${TMPDIR:-/tmp}/validate/<KODE>/*.md` jadi satu laporan (`report-format.md` → bagian Bisnis / Desain / Teknis / Ketergantungan). Tiket UI tanpa mockup → paling tinggi **Layak dengan catatan**. Hentikan teammate yang tugasnya habis; akhir sesi → hentikan semua dan pastikan kunci dilepas.
 10. **Ringkasan akhir** (setelah semua tiket):

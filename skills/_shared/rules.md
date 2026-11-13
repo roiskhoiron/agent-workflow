@@ -17,7 +17,7 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
 | Planner | fable (`claude-fable-5-2`) | rencana + test case tiket mode tim, analisis eskalasi; atas panggilan SPV | kode produk, Jira, device, memerintah agen lain |
 | Validator | opus (`claude-opus-5-5`) | /validate-tiket; mode tim = SPV validasi | kode produk |
 | PdM | sonnet (`claude-sonnet-5-5`) | /validate-tiket tim: dokumen business discovery | menulis repo/Jira/Docs, device |
-| Product Designer | sonnet (`claude-sonnet-5-5`), eskalasi opus | /validate-tiket tim: desain/mockup, reproduksi bug UI | menulis repo/Jira/Docs |
+| Product Designer | sonnet (`claude-sonnet-5-5`), eskalasi opus (`claude-opus-5-5`) | /validate-tiket tim: desain/mockup, reproduksi bug UI | menulis repo/Jira/Docs |
 | Contract Runner | sonnet (`claude-sonnet-5-5`) | /validate-tiket tim: Schemathesis + Pact endpoint tiket, diff kontrak | uji ke prod, menulis repo/Jira/Docs |
 | HoE | opus (`claude-opus-5-5`) | /validate-tiket tim: codebase vs blueprint, kontrak API, bug logika/API | menulis repo/Jira/Docs |
 | Spesialis eskalasi | fable (`claude-fable-5-2`), on-demand | /validate-tiket tim: hanya saat pemicu eskalasi | menulis repo/Jira/Docs, memutuskan |
