@@ -45,14 +45,14 @@ iOS ke TestFlight: `xcodebuild -exportArchive` dengan plist `method=app-store-co
 - Push hanya ke `origin` (downstream): `git push origin <branch>`.
 - Tujuan PR/MR:
   - Tiket ter-link ke tiket rilis → ke branch rilis (`release/vX.Y.Z` / `hotfix/vX.Y.Z`) di downstream.
-  - Selain itu → langsung ke upstream (base `develop`, atau sesuai `CLAUDE.md` project).
+  - Selain itu → langsung ke upstream (base `<protected>`, branch project dari memory, `rules.md` → Lokasi).
 - GitHub: `gh pr create`; GitLab: `glab mr create`. Judul berisi kode tiket. Isi: ringkasan, link laporan, nomor build. Tanpa kredensial.
 
 ## Tiket rilis dan hotfix (`/rilis-tiket`)
 - Release membuat tiket di Jira (`mcp__claude_ai_Atlassian__createJiraIssue`): judul `[release-request] …` atau `[hotfix-release] …` berisi versi.
 - Manifest = tiket yang di-link ke tiket rilis (`mcp__claude_ai_Atlassian__createIssueLink`).
 - Sebelum membuat branch rilis/hotfix: berhenti dan tanya.
-- Hotfix berasal dari `master` upstream atau tag versi live, **bukan** `develop`.
+- Hotfix berasal dari `<primary>` upstream atau tag versi live, **bukan** `<protected>`.
 - Cek isi branch sebelum build:
   `$AGENT_WORKFLOW_DIR/bin/manifest-check.sh <base-ref> <head-ref> PROJ-101 PROJ-105`
   Exit 0 = cocok. Exit 1 = beda → berhenti, laporkan dua daftar. Exit 2 = salah pakai/ref tidak ada → perbaiki ref.
@@ -63,7 +63,7 @@ iOS ke TestFlight: `xcodebuild -exportArchive` dengan plist `method=app-store-co
 Contoh:
 ```mermaid
 flowchart LR
-  M[master upstream] --> H[hotfix/v1.0.2 downstream]
+  M[primary upstream] --> H[hotfix/v1.0.2 downstream]
   F1[fix/PROJ-101] -->|MR| H
   F2[fix/PROJ-105] -->|MR| H
   H -->|satu MR| M

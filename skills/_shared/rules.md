@@ -9,6 +9,7 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
   Tiap panggilan Bash = shell baru: ulangi export ini di awal panggilan yang memakai skrip.
 - State lokal (bukan di repo): `${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/` — daftar transisi Jira (kunci device ada di `~/.agent-workflow/locks`).
 - **Lokasi khusus project tidak pernah ditulis di konfigurasi global** (agen, skill, rules, guard, CLAUDE.md global): folder/repo dokumen business discovery, desain/mockup, kontrak API, blueprint, remote yang di-pull, folder project. Agen membaca memory project Claude Code (`MEMORY.md` project) dan `## Catatan agen` di `CLAUDE.md` project. Belum ada → tanya user sekali (path + fungsinya), simpan sebagai memory project tipe `reference`, lalu pakai. Path berubah/tidak ditemukan → perbarui memory itu setelah bertanya.
+- **Branch project** (per repo, juga dari memory project): `<primary>` = branch produksi/live (sumber hotfix, tujuan MR rilis), `<protected>` = branch terlindungi untuk integrasi (sumber dan tujuan feature request/fix). Belum ada di memory → kumpulkan saran (`git remote -v`, `git ls-remote --symref upstream HEAD`, `git branch -r`), tanya user sekali, simpan sebagai memory project tipe `reference` (remote fork/utama ikut dicatat bila bukan `origin`/`upstream`). Nama `master`/`develop` di dokumen workflow hanya contoh, bukan aturan.
 
 ## Tim dan model
 | Agen | Model (Orca `--model`) | Tugas | Tidak boleh |
@@ -60,7 +61,7 @@ Cara tanya:
 - SPV/sesi utama: tanya di chat dan tunggu jawaban.
 
 ## Periksa dulu, lalu tanya
-Sebelum bertanya, kumpulkan fakta sendiri (git log, branch master/develop, versi live, file project). Ajukan pertanyaan dengan ringkasan temuan dan **satu saran**. Baca dulu `## Catatan agen` di `CLAUDE.md` project. Agen tidak menulis `CLAUDE.md` sendiri (worktree primary diblokir guard): jawaban user + temuan diberikan sebagai blok `## Catatan agen` siap tempel, untuk di-commit user sendiri ke `CLAUDE.md` project supaya tidak ditanya ulang. Kredensial tidak pernah dicatat.
+Sebelum bertanya, kumpulkan fakta sendiri (git log, branch `<primary>`/`<protected>`, versi live, file project). Ajukan pertanyaan dengan ringkasan temuan dan **satu saran**. Baca dulu `## Catatan agen` di `CLAUDE.md` project. Agen tidak menulis `CLAUDE.md` sendiri (worktree primary diblokir guard): jawaban user + temuan diberikan sebagai blok `## Catatan agen` siap tempel, untuk di-commit user sendiri ke `CLAUDE.md` project supaya tidak ditanya ulang. Kredensial tidak pernah dicatat.
 
 ## Workspace & worktree (Orca)
 Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace folder (`<repo-id>::<path>::workspace:<uuid>`, path sama dengan folder project).
@@ -70,7 +71,13 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 - **Domain** = workspace yang dibuka user. **Semua agen batch bekerja di dalam domain itu saja**: satu sesi (yolo) atau teammate yang tampil sebagai panel split di workspace yang sama (lihat Orkestrasi; jangan tab baru).
   - Domain git worktree (mis. BrightonChat "Manager"): kerja di checkout workspace itu.
   - Domain workspace folder (mis. Brighton RE "BAA"): checkout domain = `<path>/<repo>-<slug>` (slug = `displayName` huruf kecil, spasi → `-`; mis. `brighton-android-baa`, `brighton-ios-baa`). Belum ada → buat sejajar worktree lain repo itu: `git -C <worktree repo itu> worktree add ../<repo>-<slug> -b batch/<slug> <base>`, sebut di laporan.
-  - **`<base>` selalu ref remote terbaru:** sebelum membuat checkout domain atau worktree tiket, `git fetch upstream` (+ `git fetch origin` bila base branch rilis/hotfix), lalu tulis base sebagai ref remote: `upstream/develop` (atau base di `CLAUDE.md`), `origin/release/vX.Y.Z` / `origin/hotfix/vX.Y.Z` untuk tiket ter-link rilis. Jangan pakai branch lokal (`develop`) yang bisa basi. Catat base + hash commit (`git rev-parse --short <base>`) di rencana Docs.
+  - **`<base>` dari branch project (Lokasi), selalu ref remote terbaru:** sebelum membuat checkout domain atau worktree tiket, `git fetch upstream` (+ `git fetch origin` bila base branch rilis/hotfix), lalu:
+    | Tiket | `<base>` |
+    |---|---|
+    | Ter-link tiket `[release-request]`/`[hotfix-release]` yang branch-nya sudah ada | `origin/release/vX.Y.Z` / `origin/hotfix/vX.Y.Z` |
+    | Hotfix (ter-link `[hotfix-release]` yang branch-nya belum ada, atau tiket hotfix) | `upstream/<primary>` atau tag versi live |
+    | Feature request / fix / chore / docs lainnya | `upstream/<protected>` |
+    Jenis tiket ragu → tanya. Jangan pakai branch lokal yang bisa basi. Catat base + hash commit (`git rev-parse --short <base>`) di rencana Docs.
   - Checkout domain tetap di **branch batch** (lokal saja). Tiap tiket punya **worktree tiket** sendiri sejajar checkout domain, `<repo>-<nomor>` (nomor = angka KODE, mis. `brighton-android-11135`): `git -C <checkout domain> worktree add ../<repo>-<nomor> -b <feature|fix|...>/<KODE> <base>`. Tulis path apa adanya, tanpa variabel (guard memeriksa teks perintah). Sudah ada → pakai, jangan buat ulang; cek `git rev-list --count HEAD..<base>`: tertinggal (>0) → laporkan jumlah commit lalu tanya user rebase/merge atau lanjut apa adanya (branch mungkin sudah di-push dan direview; jangan otomatis). Catat worktree yang dibuat batch ini di rencana Docs.
   - Tiket berbeda jalan **paralel** di worktree masing-masing. Beberapa coder di satu tiket hanya bila file/modulnya terpisah.
 - **Cadangan (C):** tidak aman dibagi (coder menyentuh file yang sama, worktree dipakai batch lain) → satu agen (solo) saja, atau berhenti dan tanya.

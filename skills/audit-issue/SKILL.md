@@ -23,7 +23,7 @@ flowchart LR
    - Tempat jalan: root project atau workspace domain (`rules.md` → Workspace & worktree). Repo per platform dari `orca worktree list --json` / folder project; tidak jelas → tanya dengan satu saran.
    - Baca semua lampiran. Lampiran yang ditempel di chat hanya terlihat oleh sesi ini: telaah sendiri, beri worker ringkasannya. Gagal dibuka → catat.
 1. **Pecah permintaan:** gejala, platform, fitur/layar, daftar pertanyaan yang harus dijawab. Kabur → periksa dulu, lalu tanya dengan satu saran (`rules.md`).
-   - **Versi:** yang disebut di permintaan; tidak ada → `git fetch --tags`, lalu tag `vX.Y.Z` terbaru (atau `master`). Kode dibaca di ref itu tanpa checkout. Catat ref-nya.
+   - **Versi:** yang disebut di permintaan; tidak ada → `git fetch --tags`, lalu tag `vX.Y.Z` terbaru (atau `upstream/<primary>`, `rules.md` → Lokasi). Kode dibaca di ref itu tanpa checkout. Catat ref-nya.
 2. **Buat dokumen Claude Docs sekarang** (`mcp__claude_ai_Claude_Docs__batch`): judul `Audit — <ringkasan permintaan>`, tanggal, satu blok `pending` per bagian "Laporan audit" (`report-format.md`). Kirim link-nya ke user. Dokumen ini juga laporan final; tidak ada dokumen kedua.
 3. **Pilih mode** (`--solo`/`--tim` memaksa; tanpa flag → permintaan satu platform dan sempit = solo, selain itu tim).
    - **Solo:** sesi ini menjalankan `auditor.md` lalu `analis.md` sendiri, berurutan.
