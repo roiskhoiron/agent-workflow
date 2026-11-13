@@ -22,7 +22,7 @@ Ketik perintah ini di Claude Code, di dalam terminal Orca:
 
 | Perintah | Gunanya | Jalankan dari |
 | --- | --- | --- |
-| `/validate-tiket KODE...` | Cek tiket layak dikerjakan; bug direproduksi di device. Hasil: laporan bergambar + komentar Jira | mana saja |
+| `/validate-tiket KODE... [--solo\|--tim]` | Cek tiket layak dikerjakan; bug direproduksi di device. `--tim`: dibagi ke PdM, Product Designer, Contract Runner, HoE, PjM (+ Spesialis eskalasi). Hasil: laporan bergambar + komentar Jira | mana saja |
 | `/develop-tiket KODE... [--solo\|--tim] [--batch\|--separate] [--uat]` | Rencana, kode (TDD), review, uji di device, build, PR/MR, komentar Jira, tiket ke Ready To Review | workspace domain |
 | `/rilis-tiket KODE-RILIS` atau `/rilis-tiket baru release\|hotfix` | Kumpulkan tiket ke branch rilis/hotfix, cek manifest, build beta, satu MR ke upstream | root project atau domain |
 | `/audit-issue "teks" [--solo\|--tim] [lampiran...]` | Telusuri keluhan yang belum jadi tiket, **hanya-baca**. Hasil: laporan + saran tiket | mana saja |
@@ -92,6 +92,8 @@ flowchart LR
 3. Laporan di Claude Docs, lalu komentar Jira: **Layak** / **Layak dengan catatan** / **Tidak layak**.
 4. Layak → tiket ke In Progress. Tidak layak → tetap Todo.
 
+**Mode tim (`--tim`):** Validator jadi SPV. Sekali per sesi ia mengambil dokumen terbaru (business discovery, mockup, kontrak API, blueprint; lokasinya per project disimpan di memory project) dan menjalankan `graphify update`. Lalu paralel: **PdM** membaca dokumen bisnis, **Product Designer** mengecek mockup dan mereproduksi bug UI, **Contract Runner** menjalankan Schemathesis/Pact, **HoE** mencocokkan codebase dengan blueprint dan mereproduksi bug logika, **PjM** memantau tiket terkait dan PR terbuka. **Spesialis eskalasi** (Fable 5.2) hanya dipanggil saat ada pemicu: bug logika gagal direproduksi, temuan ambigu, tiket high-risk, atau konflik antar-agen. Semua hanya-baca; Validator menulis satu laporan, komentar Jira, dan transisi. Tiket UI tanpa mockup paling tinggi **Layak dengan catatan**.
+
 ### `/develop-tiket`
 ```mermaid
 flowchart TD
@@ -130,13 +132,19 @@ Detail lengkap tiap langkah: `skills/<perintah>/SKILL.md`. Aturan bersama: [skil
 | --- | --- | --- | --- | --- |
 | SPV | Pak Darmo | opus | bagi tugas, jatah device, putuskan selesai, publikasi laporan | menulis kode produk |
 | Planner | Pak Sastro | `claude-fable-5-2` (Fable 5.2) | rencana kerja + test case tiket mode tim, analisis saat pengerjaan macet; hanya atas panggilan SPV | kode produk, Jira, device, memerintah agen lain |
-| Validator | Kang Jajang | opus | `/validate-tiket` | menulis kode produk |
+| Validator | Kang Jajang | opus | `/validate-tiket`; mode tim = SPV validasi | menulis kode produk |
 | Coder | Maman, Ujang, Tarjo, Asep, Parmin | sonnet | kode + tes (TDD) di branch tiket; tugas UI: tanya mockup ke SPV dulu, tambahkan micro-interaction + animasi sederhana | Jira, push, upload |
 | Reviewer | Mbah Karto | opus | review performa & risiko crash | review kode sendiri |
 | QA | Paijo, Euis, Ningsih | sonnet | uji di device (Maestro, XCUITest), API (Schemathesis), kontrak (Pact) | Jira, push, upload |
 | Release | Sutini | haiku | nomor build, build + upload, push, PR/MR, komentar & geser tiket | Done, upload prod tanpa izin |
 | Auditor | Cecep, Dadang, Sarip | opus | `/audit-issue`: kode, log, reproduksi | menulis repo/Jira |
 | Analis | Bu Lastri | opus | `/audit-issue`: lampiran | menulis repo/Jira |
+| PdM | Bu Ratmi | sonnet | `/validate-tiket --tim`: dokumen business discovery | menulis repo/Jira/Docs |
+| Product Designer | Neng Lilis | sonnet (eskalasi opus) | `/validate-tiket --tim`: mockup, state layar, reproduksi bug UI | menulis repo/Jira/Docs |
+| Contract Runner | Kang Ohim | sonnet | `/validate-tiket --tim`: Schemathesis + Pact endpoint tiket | uji ke prod, menulis repo/Jira/Docs |
+| HoE | Pak Harjo | opus | `/validate-tiket --tim`: codebase vs blueprint, kontrak API, bug logika | menulis repo/Jira/Docs |
+| Spesialis eskalasi | Eyang Wiryo | `claude-fable-5-2` (Fable 5.2), on-demand | `/validate-tiket --tim`: hanya saat pemicu eskalasi | menulis repo/Jira/Docs |
+| PjM | Bu Sumi | sonnet | `/validate-tiket --tim`: tiket terkait, PR/MR terbuka, risiko bentrok | menulis Jira/PR/Docs |
 
 Di mode tim, tiap agen adalah **teammate** Claude Code (fitur *agent teams*). Orca menampilkannya sebagai **panel split** di workspace yang sama (bukan tab baru), dengan label seperti `@Maman-Programmer1` tepat di atas kolom input panel itu. Panel muncul sendiri saat SPV memanggil agen, dan tertutup sendiri saat agen dihentikan. Agen yang dapat tugas lanjutan dikirimi pesan, tidak dipanggil dua kali. Model tiap peran diubah di `agents/<peran>.md`.
 

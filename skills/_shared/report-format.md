@@ -29,6 +29,13 @@ Meniru laporan validasi yang sudah dipakai user. Urutan bagian:
 
 Keputusan parsial boleh. TC yang butuh device lebih dari yang tersedia = **Tertahan**, tulis alasannya.
 
+**Mode tim** (`--tim`): setelah Keputusan, tambah empat bagian sebelum TC, masing-masing menyebut agen sumbernya (`<Nama> (<Label>)`) dan tingkat keyakinan:
+- **Bisnis** (PdM): tujuan, AC ↔ aturan bisnis, celah, pertanyaan untuk user.
+- **Desain** (Product Designer): link mockup yang dipakai (wajib, untuk Planner/Coder), checklist state, selisih mockup vs app.
+- **Teknis** (HoE + Contract Runner, + Spesialis eskalasi bila dipanggil): dampak ke blueprint, modul yang disentuh, status API/kontrak, ukuran pekerjaan.
+- **Ketergantungan** (PjM): tabel tiket/PR → status → dampak, risiko bentrok, saran urutan.
+Di Temuan, sebut ref dokumen yang dibaca (hasil sinkron sumber).
+
 ## Laporan uji (`/develop-tiket`)
 1. **Judul**: `Uji PROJ-1234 — judul singkat`, tanggal, nama user.
 2. **Ringkasan**: tabel TC → AC → Lulus/Gagal/Tertahan, plus jenis uji (Maestro / XCUITest / Schemathesis / Pact).
