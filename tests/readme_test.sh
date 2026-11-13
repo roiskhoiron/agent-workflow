@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# README = pintu masuk pemula: setiap perintah, skrip bin/, dan MCP yang dipakai harus disebut.
+# README + docs/*.md = pintu masuk pemula: setiap perintah, skrip bin/, dan MCP yang dipakai harus disebut.
 source "$(dirname "$0")/lib.sh"
 REPO="$(cd "$(dirname "$0")/.." && pwd -P)"
 R="$REPO/README.md"
-mentioned() { grep -qF -- "$1" "$R" && echo yes || echo no; }
+mentioned() { cat "$R" "$REPO"/docs/*.md | grep -qF -- "$1" && echo yes || echo no; }
+# every docs/ page linked from README must exist
+for l in $(grep -oE '\(docs/[a-z-]+\.md\)' "$R" | tr -d '()' | sort -u); do
+  assert_eq yes "$([ -f "$REPO/$l" ] && echo yes || echo no)" "link $l ada"
+done
 
 for d in "$REPO"/skills/*/; do
   n=$(basename "$d"); [ "$n" = _shared ] && continue
