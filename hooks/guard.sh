@@ -230,8 +230,8 @@ check_rm() {
     case $a in *'$'*|*'`'*|'~'*|*'{}'*) block "rm -r dengan variabel/path tak pasti ('$a') dilarang. Tulis path literal di dalam proyek.";; esac
   done
   [ ${#paths[@]} -gt 0 ] || block "rm -r tanpa path literal (mis. lewat xargs) dilarang. Tulis path di dalam proyek secara eksplisit."
-  # other worktrees of this repo + the two project folders (user decision 2026-11-11): only rebuildable build artifacts
-  wts=$(git -C "$root" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p'; printf '%s\n' "$HOME/AndroidStudioProjects" "$HOME/StudioProjects")
+  # other worktrees of this repo + project folders the user listed in build-roots.txt: only rebuildable build artifacts
+  wts=$(git -C "$root" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p'; sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' "$HOME/.agent-workflow/build-roots.txt" 2>/dev/null)
   bad=$(WTS="$wts" "$PY" -c '
 import os, sys
 ART = {"build", ".gradle", ".cxx", ".kotlin", "DerivedData", ".build"}
@@ -251,7 +251,7 @@ for p in sys.argv[3:]:
     if not r.startswith(root + os.sep) and not artifact(r):
         print(p); break
 ' "$wd" "$root" "${paths[@]}" 2>/dev/null) || block "path rm -r tidak bisa diverifikasi (python3 gagal)."
-  [ -z "$bad" ] || block "rm -r di luar proyek ($root) dilarang: '$bad'. Hapus hanya path di dalam proyek, atau artefak build (build, .gradle, .cxx, .kotlin, DerivedData, .build) di worktree lain repo ini atau di ~/AndroidStudioProjects, ~/StudioProjects; isi /tmp/qa bebas."
+  [ -z "$bad" ] || block "rm -r di luar proyek ($root) dilarang: '$bad'. Hapus hanya path di dalam proyek, atau artefak build (build, .gradle, .cxx, .kotlin, DerivedData, .build) di worktree lain repo ini atau di folder project dari ~/.agent-workflow/build-roots.txt; isi /tmp/qa bebas."
 }
 
 # Tokenize like a shell (quotes kept together); one line per simple command, tokens joined by \x1f.

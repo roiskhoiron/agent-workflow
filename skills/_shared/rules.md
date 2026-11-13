@@ -8,6 +8,7 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
   `export AGENT_WORKFLOW_DIR="$(cd "$(readlink ~/.claude/skills/_agent-workflow-shared)/../.." && pwd -P)"`
   Tiap panggilan Bash = shell baru: ulangi export ini di awal panggilan yang memakai skrip.
 - State lokal (bukan di repo): `${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/` — daftar transisi Jira (kunci device ada di `~/.agent-workflow/locks`).
+- **Lokasi khusus project tidak pernah ditulis di konfigurasi global** (agen, skill, rules, guard, CLAUDE.md global): folder/repo dokumen business discovery, desain/mockup, kontrak API, blueprint, remote yang di-pull, folder project. Agen membaca memory project Claude Code (`MEMORY.md` project) dan `## Catatan agen` di `CLAUDE.md` project. Belum ada → tanya user sekali (path + fungsinya), simpan sebagai memory project tipe `reference`, lalu pakai. Path berubah/tidak ditemukan → perbarui memory itu setelah bertanya.
 
 ## Tim dan model
 | Agen | Model (Orca `--model`) | Tugas | Tidak boleh |
@@ -31,7 +32,7 @@ Management (SPV, Planner, Validator, Reviewer, Release) memutuskan dan berbicara
 ## Selalu diblokir (hook `guard.sh`)
 - `git push` ke remote selain `origin` (downstream/fork), termasuk `--tags` dan hapus branch. Pengecualian: tag versi `vX.Y.Z` yang ditulis eksplisit (tanpa force/hapus) boleh ke `origin` dan `upstream`.
 - Force-push atau hapus `master`/`main`/`develop`.
-- `rm -r`/`rm -rf` di luar folder project. Pengecualian: artefak build yang bisa dibuat ulang (`build`, `.gradle`, `.cxx`, `.kotlin`, `DerivedData`, `.build`) di worktree lain repo yang sama atau di bawah `~/AndroidStudioProjects` dan `~/StudioProjects`; isi `/tmp/qa/` (output uji sementara) bebas dihapus.
+- `rm -r`/`rm -rf` di luar folder project. Pengecualian: artefak build yang bisa dibuat ulang (`build`, `.gradle`, `.cxx`, `.kotlin`, `DerivedData`, `.build`) di worktree lain repo yang sama atau di folder project yang terdaftar di `~/.agent-workflow/build-roots.txt` (diisi user); isi `/tmp/qa/` (output uji sementara) bebas dihapus.
 - Memindah tiket Jira ke status yang tidak ada di `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit/Write file di worktree primary; berlaku untuk repo yang punya worktree tambahan (pola Orca).
 - Membuka terminal/agen sendiri (`orca terminal split`, `orca terminal create`, `orca agent launch`, `worker-start --agent`): agen tambahan selalu **teammate** (lihat Orkestrasi).

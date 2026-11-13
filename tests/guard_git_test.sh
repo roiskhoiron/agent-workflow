@@ -97,8 +97,10 @@ check 2 "rm -rf $T/work-123/src"
 check 2 "rm -rf $T/work-123"
 check 2 "rm -rf $T/work-123/app/build $T/work-123/src"
 check 2 "rm -rf $T/other/build"
-# ~/AndroidStudioProjects, ~/StudioProjects: build artifacts from any session
-mkdir -p "$T/StudioProjects/app/build" "$T/AndroidStudioProjects/a/src"
+# folders listed in ~/.agent-workflow/build-roots.txt: build artifacts from any session
+mkdir -p "$T/StudioProjects/app/build" "$T/AndroidStudioProjects/a/src" "$T/.agent-workflow" "$T/Unlisted/app/build"
+printf '# komentar\n%s\r\n%s  \n' "$T/StudioProjects" "$T/AndroidStudioProjects" > "$T/.agent-workflow/build-roots.txt"
+HOME=$T check 2 "rm -rf $T/Unlisted/app/build"
 HOME=$T check 0 "rm -rf $T/StudioProjects/app/build $T/StudioProjects/app/build/dd"
 HOME=$T check 2 "rm -rf $T/AndroidStudioProjects/a/src"
 HOME=$T check 2 "rm -rf $T/StudioProjects"
