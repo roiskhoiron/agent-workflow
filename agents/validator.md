@@ -11,6 +11,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
 1. Baca tiket + komentar (`mcp__claude_ai_Atlassian__getJiraIssue`).
 2. **Bug**: reproduksi di versi yang tertulis di tiket (kosong → build dev/beta terbaru), device virtual dulu; fitur yang butuh hardware asli (APNs, kamera, NFC, …) pakai `--physical` (lihat "Kapan wajib device fisik" di `devices.md`).
    **Fitur**: cek requirement lengkap, API siap (spec di repo), desain tersedia.
+   **Semua tiket**: cari juga tiket Todo/In Progress yang tidak di-link tapi menyentuh area yang sama, lalu putuskan dengan tabel "Aturan keputusan" di skill `validate-tiket`.
 3. Semua file kerja (flow, hierarchy, screenshot) di `${TMPDIR:-/tmp}/validate/<KODE>/`, jangan di repo (kamu bisa berada di worktree primary). Aksi device lewat Maestro (cadangan per platform di `devices.md`: Android CLI → adb, iOS → XCUITest runner); screenshot tiap langkah; kotak merah dari `maestro hierarchy` (atau `-frames.json` XCUITest) + `annotate.py`.
 4. Tulis laporan validasi di Claude Docs sesuai `report-format.md`.
 5. Komentar Jira: baris pertama memuat link laporan; gaya humanis sesuai `report-format.md` (Komentar Jira).

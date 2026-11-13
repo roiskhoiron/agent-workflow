@@ -33,7 +33,7 @@ Keputusan parsial boleh. TC yang butuh device lebih dari yang tersedia = **Terta
 - **Bisnis** (PdM): tujuan, AC ↔ aturan bisnis, celah, pertanyaan untuk user.
 - **Desain** (Product Designer): link mockup yang dipakai (wajib, untuk Planner/Coder), checklist state, selisih mockup vs app.
 - **Teknis** (HoE + Contract Runner, + Spesialis eskalasi bila dipanggil): dampak ke blueprint, modul yang disentuh, status API/kontrak, ukuran pekerjaan.
-- **Ketergantungan** (PjM): tabel tiket/PR → status → dampak, risiko bentrok, saran urutan.
+- **Ketergantungan** (PjM): tabel tiket/PR → status → dampak; tabel tiket terkait yang tidak di-link → titik tumpang tindih → selaras/bertabrakan (kutipan); risiko bentrok, saran urutan.
 Di Temuan, sebut ref dokumen yang dibaca (hasil sinkron sumber).
 
 ## Laporan uji (`/develop-tiket`)
