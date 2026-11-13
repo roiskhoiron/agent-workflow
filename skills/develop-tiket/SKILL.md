@@ -14,7 +14,7 @@ Baca dulu (jangan disalin ke sini): `~/.claude/skills/_agent-workflow-shared/rul
 
 ```mermaid
 flowchart LR
-  G[Cek worktree] --> R[Baca tiket] --> P[Rencana + TC di Docs]
+  G[Cek worktree + sinkron dokumen] --> R[Baca tiket + gerbang validasi + Acuan tiket] --> P[Rencana + TC di Docs]
   P --> C[Coder TDD per tiket] --> V{Review bersih?}
   V -- tidak --> C
   V -- ya --> M[Gabung ke branch batch] --> B[Satu build dev/beta]
@@ -25,8 +25,17 @@ flowchart LR
 
 ## Langkah
 0. **Guard:** kenali domain (`rules.md` → Workspace & worktree: `$ORCA_WORKTREE_ID`). Root project (`isMainWorktree: true`) atau tidak ketemu → berhenti: "Jalankan dari workspace domain". Tentukan checkout domain (git worktree workspace, atau `<repo>-<slug>` untuk workspace folder; tidak ada → buat sesuai `rules.md`), lalu kunci `checkout:<path>`. Branch batch (`--batch`) = branch checkout domain saat ini (hanya lokal, **tidak pernah** di-push ke upstream).
-1. **Prasyarat (sekali):** Atlassian MCP terjangkau (`mcp__claude_ai_Atlassian__atlassianUserInfo`); `~/.agent-workflow/jira-transitions.json` punya entri project dengan id **Ready To Review** (belum → "Setup transisi Jira" di `rules.md`). Akun uji ada (`credentials.md`); tidak ada → berhenti & tanya.
+1. **Prasyarat (sekali):** Atlassian MCP terjangkau (`mcp__claude_ai_Atlassian__atlassianUserInfo`); `~/.agent-workflow/jira-transitions.json` punya entri project dengan id **Ready To Review** (belum → "Setup transisi Jira" di `rules.md`). Akun uji ada (`credentials.md`); tidak ada → berhenti & tanya. **Sinkron sumber** sama persis dengan `/validate-tiket` langkah 1 (business discovery, desain/mockup, kontrak API, blueprint; lokasi dari memory project; `git fetch`/`git pull` lalu `graphify update`); catat ref yang dibaca.
 2. **Baca tiket** + komentar + tiket terkait/blocking (`getJiraIssue`, `searchJiraIssuesUsingJql`). Catat per tiket: AC, platform (ios/android/api), dan apakah ter-link ke tiket `[release-request]`/`[hotfix-release]` (→ base & tujuan MR = branch rilis itu di `origin`; selain itu base `develop` atau sesuai `CLAUDE.md`). Tiket blocking belum selesai / requirement kabur → periksa dulu, lalu tanya. Cari spec API & kontrak Pact di repo; tidak ada → tanya; jawabannya jadi blok `## Catatan agen` untuk user (lihat `rules.md`).
+   - **Gerbang validasi:** cari komentar laporan validasi terbaru (baris pertama = link Docs) dan **baca laporannya**, solo maupun tim.
+     | Kondisi | Tindakan |
+     |---|---|
+     | Belum pernah divalidasi | Tanya user: jalankan `/validate-tiket` dulu, atau lanjut dengan cek singkat SPV (dicatat di rencana) |
+     | **Tidak layak** | Berhenti & tanya |
+     | **Layak dengan catatan** | Tiap catatan masuk rencana dan jadi TC atau tugas |
+     | **Layak** | Lanjut |
+   - **Dokumen terbaru:** dari sumber yang disinkron, baca bagian yang terkait tiket: business discovery (tujuan, aturan bisnis), mockup/desain (layar, state, teks), kontrak API (endpoint, skema), blueprint (modul/arsitektur yang tersentuh). Bandingkan dengan ref yang tercatat di laporan validasi: berubah sejak validasi dan menyentuh AC, desain, atau kontrak → sebut perbedaannya dan tanya user sebelum lanjut; berubah kecil → catat di rencana.
+   - Hasilnya **Acuan tiket**: link/path + ref tiap dokumen di atas + link laporan validasi. Acuan ini masuk rencana, brief Planner, prompt Coder (mockup, kontrak), dan tugas QA (kontrak untuk Schemathesis/Pact). Tidak ada di sumber → tulis "tidak ada" di acuan; tiket UI tanpa mockup → tanya user.
 3. **Rencana + test case** di Claude Docs (`mcp__claude_ai_Claude_Docs__batch`): `--batch`: satu dokumen untuk semua tiket; `--separate`: satu dokumen per tiket. TC per AC per tiket; TC yang butuh hardware asli ditandai `(fisik)` (`devices.md`). Tentukan mode dulu (kriteria langkah 4). **Tim:** SPV memanggil **Planner** (`planner.md`) dengan brief; Planner menulis dokumen `Rencana <KODE> — <judul singkat>` dan membalas link + ringkasan + status (Siap / Butuh jawaban / Tidak bisa); SPV memeriksanya terhadap device, antrean build, dan batch sebelum membagi tugas. Planner tidak tersedia atau **Tidak bisa** → SPV menulis sendiri dan mencatatnya di dokumen. **Solo**/tiket kecil: SPV menulis sendiri, catatan singkat cukup.
 4. **Pilih mode** (`--solo`/`--tim` memaksa; tanpa flag → SPV menilai: 1 tiket kecil = solo, selain itu tim). Tiap tiket di **worktree tiket** `<repo>-<nomor>` sejajar checkout domain, branch `feature/|fix/|hotfix/|docs/|chore/<KODE>` dari `<base>` (`rules.md` → Workspace & worktree); tiket berbeda jalan paralel, tiap tiket MR sendiri. Tidak ada project/workspace Orca baru.
    - **Solo:** SPV sendiri menjalankan peran Coder → Reviewer (review diff sendiri dengan daftar cek `reviewer.md`, catat di laporan bahwa review bukan independen) → QA → Release, berurutan, sesuai file perannya.

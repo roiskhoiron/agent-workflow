@@ -55,7 +55,9 @@ Pilihan `/develop-tiket`:
 
 ```mermaid
 flowchart TD
-  S[Baca tiket + rencana & test case di Claude Docs] --> K[Coder: kode + tes TDD di worktree tiket]
+  G[Cek awal: MCP, transisi, akun uji, sinkron dokumen] --> V{Gerbang validasi}
+  V -->|Tidak layak / belum divalidasi| A[Tanya kamu]
+  V -->|Layak / Layak dengan catatan| S[Baca tiket + Acuan tiket, rencana & test case di Claude Docs] --> K[Coder: kode + tes TDD di worktree tiket]
   K --> R{Reviewer: performa & crash}
   R -->|ada temuan wajib| K
   R -->|bersih| M[--batch: merge ke branch batch]
@@ -65,6 +67,16 @@ flowchart TD
   Q -->|lulus, --uat: UAT kamu dulu| P[Laporan uji, push origin, PR/MR, komentar Jira]
   P --> T[Tiket ke Ready To Review + hapus worktree tiket]
 ```
+- **Sebelum mulai**, SPV menyinkronkan dokumen (business discovery, mockup, kontrak API, blueprint; sama seperti `/validate-tiket`) dan membaca laporan validasi terakhir:
+
+  | Laporan validasi | Tindakan |
+  | --- | --- |
+  | Belum ada | SPV bertanya: validasi dulu, atau lanjut dengan cek singkat |
+  | Tidak layak | Berhenti dan bertanya |
+  | Layak dengan catatan | Catatan masuk rencana dan test case |
+  | Layak | Lanjut |
+
+  Dokumen yang berubah sejak validasi dan menyentuh AC, desain, atau kontrak → SPV menyebut perbedaannya dan bertanya. Link dokumen terbaru (**Acuan tiket**) dibawa ke rencana, Coder, dan QA.
 - Di `--batch`, build baru jalan setelah **semua** tiket lolos review (atau dikeluarkan dari batch dengan alasan tertulis). Perbaikan setelah QA dikumpulkan dulu, baru satu build ulang.
 - Tiket yang macet dikeluarkan dari batch dan dilaporkan, tidak dijalankan sendiri diam-diam.
 - Dengan `--uat`, device fisik dipindah ke kamu (kunci `human-<KODE>`); crash selama UAT mengembalikan tiket ke Coder. Pemantauan log gagal → SPV memberi tahu, dan hasil UAT mengikuti laporanmu.
