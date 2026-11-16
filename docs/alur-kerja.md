@@ -24,7 +24,12 @@ flowchart LR
 
 - Agen **tidak pernah** memindah tiket ke Done; guard memblokirnya karena Done tidak ada di `jira-transitions.json`.
 - Agen hanya boleh memakai transisi **In Progress**, **Ready To Review**, dan **Todo** (Todo hanya lewat `/rilis-tiket` dengan izin per tiket). ID-nya dipilih kamu sekali per project.
-- Tiket yang ditolak QA kembali ke Todo; `/validate-tiket` lalu memvalidasi ulang (apa yang ditolak), dan `/develop-tiket` melanjutkan di branch dan PR/MR yang sama.
+- Tiket yang ditolak QA kembali ke Todo; `/validate-tiket` mendeteksi jejak (branch `*/<KODE>`, PR/MR, komentar laporan) dan masuk **mode validasi ulang**: membaca penolakan, menggolongkannya, lalu menulis laporan delta + daftar **Yang ditolak**. `/develop-tiket` melanjutkan di branch, worktree, dan PR/MR yang sama (PR/MR kembali ke Draft) dengan rencana revisi yang punya bagian **Yang ditolak**.
+
+| Penolakan | Hasil validasi ulang |
+|---|---|
+| Implementasi meleset | **Layak** + daftar revisi |
+| Requirement berubah/kurang | Cek ulang bisnis/mockup/kontrak; tanya user/PM bila perlu; keputusan lewat tabel di bawah |
 
 ## `/validate-tiket`
 1. Baca tiket, komentar, dan link terkait; catat AC dan versi.

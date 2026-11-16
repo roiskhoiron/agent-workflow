@@ -30,6 +30,12 @@ flowchart LR
    - **Sinkron sumber (sekali per sesi):** lokasi dokumen business discovery, desain/mockup, kontrak API, blueprint dari memory project (`rules.md` → Lokasi; belum ada → tanya user, simpan). Repo yang sama dengan kode → `git fetch upstream` lalu baca dari `upstream/<protected>` (branch project dari memory, `rules.md` → Lokasi) tanpa checkout; repo dokumen terpisah → `git pull` di checkout dokumen itu (bukan worktree primary). Lalu `graphify update` bila project memakai graphify. Catat ref yang dibaca di laporan.
 2. **Per tiket, berurutan.** Ulangi 3–8 untuk tiap KODE; satu laporan per tiket.
 3. **Baca** tiket, komentar, dan link terkait lewat `mcp__claude_ai_Atlassian__getJiraIssue`. Catat AC dan versi yang tertulis.
+   **Deteksi jejak** (tiap tiket): branch `git branch -r --list 'origin/*/<KODE>'`, PR/MR `gh pr list --state all --search <KODE>` / `glab mr list --all --search <KODE>`, dan komentar Jira berisi laporan uji/rencana agen. Ada salah satunya → **mode validasi ulang** (tiket kembali ke Todo): baca penolakan sejak putaran terakhir = komentar arahan QA di Jira (dari `/rilis-tiket`) + komentar review PR/MR manusia, lalu **golongkan** tiap poin:
+   | Golongan | Tindakan |
+   |---|---|
+   | **Implementasi meleset** (requirement tetap) | Keputusan **Layak**; daftar revisi masuk "Yang ditolak" |
+   | **Requirement berubah/kurang** | Cek ulang bisnis/mockup/kontrak terhadap dokumen terbaru; tidak jelas → tanya user/PM; keputusan memakai tabel "Aturan keputusan" |
+   Tidak ada jejak → validasi biasa.
 4. **Bug:** tentukan versi dari tiket (kosong → build dev/beta terbaru, lihat `build-release.md`). Ambil device (`device-pick.sh`: virtual dulu; `--physical` bila butuh hardware asli, lihat `devices.md`), reproduksi via Maestro (cadangan per platform di `devices.md`); screenshot tiap langkah.
    **Fitur:** cek requirement lengkap, API siap (spec di repo), desain tersedia.
    **Tiket terkait (solo dan tim):** selain link yang ada, cari tiket Todo/In Progress yang tidak di-link tapi menyentuh komponen/label/layar/fitur/endpoint yang sama (JQL `text ~`); mode tim dikerjakan PjM. Link antar tiket tidak dibuat sendiri: cukup disarankan di komentar.
@@ -41,7 +47,7 @@ flowchart LR
    | Bertabrakan dengan tiket/dokumen lain | Tidak layak sampai diputuskan | Komentar menyebut kedua tiket + titik tabrakan (kutipan); tanya user mana yang berlaku |
    | Tumpang tindih tapi selaras | Layak dengan catatan | Saran urutan pengerjaan atau penggabungan |
 5. **Screenshot bertanda:** ambil bounds dari `maestro hierarchy` atau `-frames.json` XCUITest (bukan ditebak), lalu `$AGENT_WORKFLOW_DIR/bin/annotate.py`. File kerja hanya di `${TMPDIR:-/tmp}/validate/<KODE>/`, bukan di repo.
-6. **Laporan** di Claude Docs sesuai `report-format.md`; unggah screenshot. Tanpa kredensial (sebut nama kunci saja).
+6. **Laporan** di Claude Docs sesuai `report-format.md`; unggah screenshot. Tanpa kredensial (sebut nama kunci saja). **Validasi ulang:** laporan berbentuk **delta**: apa yang berubah dibanding validasi sebelumnya (link laporan lama) + bagian **Yang ditolak** (tiap poin: sumber komentar, golongan, saran tugas/TC). Lalu dikomentari dan ditransisikan seperti biasa.
 7. **Komentar Jira** (`addCommentToJiraIssue`): baris pertama = link laporan, lalu keputusan: **Layak** / **Layak dengan catatan** / **Tidak layak** + alasan singkat.
 8. **Transisi:** Layak / Layak dengan catatan → `transitionJiraIssue` ke In Progress dengan id dari `jira-transitions.json`. Tidak layak → tetap Todo. Lepas kunci device/akun (`AGENT_LOCK_PID=$PPID ... device-lock.sh release ...`).
 9. **Mode tim** (menggantikan langkah 4–5, SPV tetap menulis laporan, komentar, transisi):
