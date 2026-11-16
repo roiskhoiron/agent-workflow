@@ -97,3 +97,25 @@ Kalau ada yang kurang pas, tinggal kabari aku, nanti aku perbaiki. Terima kasih 
 ```
 
 Kirim lewat `mcp__claude_ai_Atlassian__addCommentToJiraIssue`.
+
+## Laporan rilis (/branch-manager)
+Dokumen Claude Docs berjudul `Perubahan rilis vX.Y.Z`. Urutan isi:
+1. Diagram mermaid alur: branch tiket → `<protected>` → `<primary>` → tag.
+```mermaid
+flowchart LR
+  T[branch tiket] -->|PR tiket| P[protected]
+  P -->|PR rilis| M[primary]
+  M --> G[tag vX.Y.Z]
+```
+2. Versi + ref asal (hash `<primary>` dan `<protected>`).
+3. Tabel per perubahan:
+
+| KODE | Ringkasan | Branch | PR/MR | Programmer | Status Jira |
+|---|---|---|---|---|---|
+
+4. Commit tak terlacak (tanpa tiket) dan tiket belum Done: ditandai.
+5. Matriks env live untuk endpoint semua tiket.
+6. Rekomendasi agen.
+7. Build + server API (nama server + base URL live), link PR rilis, tag (diisi setelah ada).
+
+Komentar Jira di tiket rilis: baris pertama link dokumen, lalu ringkasan versi, jumlah perubahan, dan rekomendasi.

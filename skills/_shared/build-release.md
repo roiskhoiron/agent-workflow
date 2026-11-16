@@ -43,32 +43,41 @@ iOS ke TestFlight: `xcodebuild -exportArchive` dengan plist `method=app-store-co
 
 ## PR/MR
 - Push hanya ke `origin` (downstream): `git push origin <branch>`.
-- Tujuan PR/MR:
-  - Tiket ter-link ke tiket rilis → ke branch rilis (`release/vX.Y.Z` / `hotfix/vX.Y.Z`) di downstream.
-  - Selain itu → langsung ke upstream (base `<protected>`, branch project dari memory, `rules.md` → Lokasi).
+- Tujuan PR/MR: semua PR tiket ke upstream, base `<protected>` (branch project dari memory, `rules.md` → Lokasi). Tidak ada branch rilis.
 - Dibuat **Draft** di awal pengerjaan (`/develop-tiket` langkah 4: `gh pr create --draft` / `glab mr create --draft`), diperbarui oleh push rutin Coder, ditandai siap di akhir (`gh pr ready` / `glab mr update <n> --ready`). Judul berisi kode tiket. Isi: ringkasan, link rencana dan laporan, Matriks env, nomor build + server API tiap build variant. Tanpa kredensial.
 - Branch batch tidak pernah jadi sumber PR/MR; tiap PR/MR dari branch tiketnya sendiri.
 
-## Tiket rilis dan hotfix (`/rilis-tiket`)
-- Release membuat tiket di Jira (`mcp__claude_ai_Atlassian__createJiraIssue`): judul `[release-request] …` atau `[hotfix-release] …` berisi versi.
-- Manifest = tiket yang di-link ke tiket rilis (`mcp__claude_ai_Atlassian__createIssueLink`).
-- Sebelum membuat branch rilis/hotfix: berhenti dan tanya.
-- Hotfix berasal dari `<primary>` upstream atau tag versi live, **bukan** `<protected>`.
-- Cek isi branch sebelum build:
-  `$AGENT_WORKFLOW_DIR/bin/manifest-check.sh <base-ref> <head-ref> PROJ-101 PROJ-105`
-  Exit 0 = cocok. Exit 1 = beda → berhenti, laporkan dua daftar. Exit 2 = salah pakai/ref tidak ada → perbaiki ref.
-- Dua fix hotfix bentrok → berhenti dan tanya.
-- Hotfix yang sudah di-build tidak ditambah; fix baru masuk versi berikutnya.
-- Satu PR/MR ke upstream per rilis/hotfix. Setelah di-merge, Release membuat tag beranotasi `vX.Y.Z` di commit hasil merge dan push ke `upstream` serta `origin` (langkah 11 `/rilis-tiket`).
+## Merge PR tiket (/rilis-tiket)
+Agen hanya merge PR tiket ke `<protected>` bila **semua** syarat ini lolos; gagal satu → lapor + saran, tidak merge.
 
-Contoh:
+| Syarat | Cara cek |
+|---|---|
+| Tiket Done dan punya PR/MR | Jira + `gh pr list` / `glab mr list` |
+| PR/MR approved | `gh pr view` / `glab mr view` |
+| CI hijau | status check PR/MR |
+| Isi diff sesuai tiket | baca diff vs AC; `manifest-check.sh` bila perlu |
+| Matriks env live **Sesuai kontrak** | cek ulang di server live (method aman) |
+
+- Strategi merge sesuai memory project (squash atau merge commit); tracing rilis mendukung keduanya.
+- Merge PR rilis ke `<primary>` bukan wewenang agen (lihat bawah).
+
+## Rilis (/branch-manager)
+Alurnya: PR rilis `<protected>` → `<primary>` di upstream, build live dari commit yang sama, tag setelah merge.
 ```mermaid
 flowchart LR
-  M[primary upstream] --> H[hotfix/v1.0.2 downstream]
-  F1[fix/PROJ-101] -->|MR| H
-  F2[fix/PROJ-105] -->|MR| H
-  H -->|satu MR| M
+  T[branch tiket] -->|PR tiket| P[protected upstream]
+  P -->|PR rilis, merge commit| M[primary upstream]
+  M --> G[tag vX.Y.Z]
 ```
+- Pakai merge commit untuk PR rilis, **bukan squash**, supaya `<primary>` tetap terkandung di `<protected>`. Upstream hanya squash → berhenti dan tanya.
+- PR rilis dibuat dari branch upstream `<protected>` tanpa push: `gh pr create --repo <upstream> --base <primary> --head <protected>` / `glab mr create`. **Di-merge manusia**, tidak pernah oleh agen.
+- Tracing perubahan: `$AGENT_WORKFLOW_DIR/bin/release-trace.sh <primary-ref> <protected-ref> PROJ ...` (TSV sha7/pr/kode/author/subject). Exit 0 = semua terlacak. Exit 1 = ada baris tak terlacak → tandai di laporan. Exit 2 = salah pakai/ref tidak ada. Exit 3 = `<primary>` bukan leluhur `<protected>` (hotfix belum di-back-merge) → berhenti dan tanya.
+- Cek isi: `manifest-check.sh` mencocokkan commit ↔ kode tiket; semua tiket harus Done.
+- Build live dari head PR rilis (worktree sementara, kunci `build:heavy`): Android `.aab`, iOS TestFlight. Upload ke store produksi tetap izin eksplisit per upload. Catatan rilis menyebut server + base URL API live.
+- Setelah PR rilis merged oleh manusia: tag beranotasi `vX.Y.Z` di commit merge, push ke `upstream` dan `origin`. Tag tidak pernah ditimpa.
+- **Keluarkan tiket dari rilis**: PR revert ke `<protected>` dari branch `revert/<KODE>` di downstream, judul `revert: <KODE> keluar dari rilis vX.Y.Z`; merge mengikuti aturan merge PR tiket. Tracing diulang setelah ter-merge.
+- Tiket itu Done lagi → buat PR **revert dari revert** dulu sebelum dihitung masuk rilis berikutnya.
+- Hotfix: sementara manual dengan bertanya (`--hotfix` belum ada). Dua fix bentrok → berhenti dan tanya.
 
 ## Jira setelah rilis
 Komentar (baris pertama link laporan) berisi link build dan PR/MR, lalu geser ke Ready To Review. Done hanya oleh kolega.

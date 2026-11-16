@@ -9,7 +9,7 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
   Tiap panggilan Bash = shell baru: ulangi export ini di awal panggilan yang memakai skrip.
 - State lokal (bukan di repo): `${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/` — daftar transisi Jira (kunci device ada di `~/.agent-workflow/locks`).
 - **Lokasi khusus project tidak pernah ditulis di konfigurasi global** (agen, skill, rules, guard, CLAUDE.md global): folder/repo dokumen business discovery, desain/mockup, kontrak API, blueprint, remote yang di-pull, folder project. Agen membaca memory project Claude Code (`MEMORY.md` project) dan `## Catatan agen` di `CLAUDE.md` project. Belum ada → tanya user sekali (path + fungsinya), simpan sebagai memory project tipe `reference`, lalu pakai. Path berubah/tidak ditemukan → perbarui memory itu setelah bertanya.
-- **Branch project** (per repo, juga dari memory project): `<primary>` = branch produksi/live (sumber hotfix, tujuan MR rilis), `<protected>` = branch terlindungi untuk integrasi (sumber dan tujuan feature request/fix). Belum ada di memory → kumpulkan saran (`git remote -v`, `git ls-remote --symref upstream HEAD`, `git branch -r`), tanya user sekali, simpan sebagai memory project tipe `reference` (remote fork/utama ikut dicatat bila bukan `origin`/`upstream`). Nama `master`/`develop` di dokumen workflow hanya contoh, bukan aturan.
+- **Branch project** (per repo, juga dari memory project): `<primary>` = branch produksi/live (sumber hotfix, tujuan MR rilis), `<protected>` = branch terlindungi untuk integrasi (sumber dan tujuan feature request/fix). Belum ada di memory → kumpulkan saran (`git remote -v`, `git ls-remote --symref upstream HEAD`, `git branch -r`), tanya user sekali, simpan sebagai memory project tipe `reference` (remote fork/utama ikut dicatat bila bukan `origin`/`upstream`). Memory ini juga memuat **strategi merge upstream** (squash / merge commit) untuk PR tiket; PR rilis `<protected>` → `<primary>` wajib merge commit. Upstream hanya mengizinkan squash → berhenti dan tanya. Nama `master`/`develop` di dokumen workflow hanya contoh, bukan aturan.
 - **Server API per env** (juga dari memory project): base URL dev/beta/live dan pemetaan build variant (flavor/scheme) → env. Belum ada → kumpulkan saran dari konfigurasi build project, tanya user sekali, simpan sebagai memory project tipe `reference`. Kredensial tidak pernah disimpan di sini.
 
 ## Tim dan model
@@ -25,7 +25,7 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
 | Spesialis eskalasi | fable (`claude-fable-5-2`), on-demand | /validate-tiket tim: hanya saat pemicu eskalasi | menulis repo/Jira/Docs, memutuskan |
 | PjM | sonnet (`claude-sonnet-5-5`) | /validate-tiket tim: tiket terkait/blocking, PR/MR terbuka, risiko bentrok | menulis Jira/PR/Docs, device |
 | Reviewer | opus (`claude-opus-5-5`) | performa & keamanan, lalu logika vs AC; review ditulis di PR/MR | review kode sendiri |
-| Release | haiku (`claude-haiku-5-5`) | Draft PR/MR, nomor build, build+upload, PR/MR siap review, komentar & geser tiket | Done, upload prod tanpa izin |
+| Release | haiku (`claude-haiku-5-5`) | Draft PR/MR, nomor build, build+upload, PR/MR siap review, komentar & geser tiket, merge PR tiket setelah audit (/rilis-tiket), PR revert | Done, upload prod tanpa izin, merge PR rilis ke `<primary>` |
 | Coder | sonnet (`claude-sonnet-5-5`) | TDD di branch sendiri, push rutin branch tiketnya ke `origin` | Jira, push selain branch tiketnya, force-push, upload, device di luar jatah |
 | QA | sonnet (`claude-sonnet-5-5`) | Maestro, XCUITest, Schemathesis, Pact di device | Jira, push, upload, device di luar jatah |
 | Auditor | opus (`claude-opus-5-5`) | /audit-issue: kode, log, reproduksi | menulis repo/Jira |
@@ -51,7 +51,7 @@ Jangan mencari jalan memutar. Jika diblokir, laporkan pesannya ke SPV/user.
 
 ## Selalu berhenti dan tanya
 1. Upload ke prod.
-2. Sebelum membuat branch rilis/hotfix.
+2. Sebelum memulai hotfix (sementara manual) dan sebelum merge PR rilis (hanya manusia).
 3. Nomor build tidak jelas (`build-number.sh` keluar dengan kode 3).
 4. Kredensial tidak ditemukan.
 5. Dua fix hotfix bentrok (mode tim: SPV minta analisis opsi dari Planner dulu, lalu tanya).
@@ -72,11 +72,10 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 - **Domain** = workspace yang dibuka user. **Semua agen batch bekerja di dalam domain itu saja**: satu sesi (yolo) atau teammate yang tampil sebagai panel split di workspace yang sama (lihat Orkestrasi; jangan tab baru).
   - Domain git worktree (mis. BrightonChat "Manager"): kerja di checkout workspace itu.
   - Domain workspace folder (mis. Brighton RE "BAA"): checkout domain = `<path>/<repo>-<slug>` (slug = `displayName` huruf kecil, spasi → `-`; mis. `brighton-android-baa`, `brighton-ios-baa`). Belum ada → buat sejajar worktree lain repo itu: `git -C <worktree repo itu> worktree add ../<repo>-<slug> -b batch/<slug> <base>`, sebut di laporan.
-  - **`<base>` dari branch project (Lokasi), selalu ref remote terbaru:** sebelum membuat checkout domain atau worktree tiket, `git fetch upstream` (+ `git fetch origin` bila base branch rilis/hotfix), lalu:
+  - **`<base>` dari branch project (Lokasi), selalu ref remote terbaru:** sebelum membuat checkout domain atau worktree tiket, `git fetch upstream` (+ `git fetch origin` bila perlu), lalu:
     | Tiket | `<base>` |
     |---|---|
-    | Ter-link tiket `[release-request]`/`[hotfix-release]` yang branch-nya sudah ada | `origin/release/vX.Y.Z` / `origin/hotfix/vX.Y.Z` |
-    | Hotfix (ter-link `[hotfix-release]` yang branch-nya belum ada, atau tiket hotfix) | `upstream/<primary>` atau tag versi live |
+    | Hotfix | `upstream/<primary>` atau tag versi live; sementara ditangani manual dengan bertanya (`--hotfix` belum ada) |
     | Feature request / fix / chore / docs lainnya | `upstream/<protected>` |
     Jenis tiket ragu → tanya. Jangan pakai branch lokal yang bisa basi. Catat base + hash commit (`git rev-parse --short <base>`) di rencana Docs.
   - Checkout domain tetap di **branch batch** (lokal saja). Tiap tiket punya **worktree tiket** sendiri sejajar checkout domain, `<repo>-<nomor>` (nomor = angka KODE, mis. `brighton-android-11135`): `git -C <checkout domain> worktree add ../<repo>-<nomor> -b <feature|fix|...>/<KODE> <base>`. Tulis path apa adanya, tanpa variabel (guard memeriksa teks perintah). Sudah ada → pakai, jangan buat ulang; cek `git rev-list --count HEAD..<base>`: tertinggal (>0) → laporkan jumlah commit lalu tanya user rebase/merge atau lanjut apa adanya (branch mungkin sudah di-push dan direview; jangan otomatis). Catat worktree yang dibuat batch ini di rencana Docs.
@@ -123,7 +122,6 @@ Di `/audit-issue`, worker reproduksi memakai nama QA (Paijo, Euis, Ningsih) teta
 
 ## Git
 - Branch kerja: `feature/` `fix/` `hotfix/` `docs/` `chore/` + kode tiket (mis. `fix/PROJ-1234`), dibuat di downstream.
-- Branch rilis: `release/vX.Y.Z`, `hotfix/vX.Y.Z` (selalu tanya dulu).
 - Commit menyebut kode tiket (dibaca `manifest-check.sh`).
 - Tag versi `vX.Y.Z` (beranotasi) dibuat Release setelah MR upstream di-merge, di commit hasil merge, lalu di-push ke `upstream` dan `origin`. Tag tidak pernah di-force atau dihapus.
 - Push hanya oleh Release: branch hanya ke `origin`; tag versi ke `upstream` dan `origin`.
@@ -132,12 +130,12 @@ Di `/audit-issue`, worker reproduksi memakai nama QA (Paijo, Euis, Ningsih) teta
 Hook menolak transisi sebelum project punya daftar. Jika ditolak "belum punya daftar transisi":
 1. `mcp__claude_ai_Atlassian__getTransitionsForJiraIssue` pada satu tiket project itu.
 2. Tunjukkan tabel `id → nama status` ke user.
-3. User memilih id untuk **In Progress** dan **Ready To Review** (jangan pernah Done).
+3. User memilih id untuk **Todo**, **In Progress**, dan **Ready To Review** (jangan pernah Done).
 4. Tulis lewat Bash (bukan Edit/Write), gabungkan dengan isi lama:
 ```bash
 S=${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}; F="$S/jira-transitions.json"
 mkdir -p "$S" && { [ -s "$F" ] || echo '{}' > "$F"; } &&
-jq '. + {"PROJ":{"allow":["21","31"],"names":{"21":"In Progress","31":"Ready To Review"}}}' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+jq '. + {"PROJ":{"allow":["11","21","31"],"names":{"11":"Todo","21":"In Progress","31":"Ready To Review"}}}' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
 ```
 Pemindahan tiket: `mcp__claude_ai_Atlassian__transitionJiraIssue` dengan id dari file itu.
 
