@@ -11,11 +11,12 @@
 **Dijaga aturan skill (bukan guard):**
 - Merge PR rilis (`<protected>` → `<primary>`): hanya manusia. Agen hanya merge PR tiket (ke `<protected>`), setelah audit dan "ya" dari user.
 - Pindah tiket ke Todo tanpa izin user.
-- Upload build produksi (Play production/`.aab` ke store, TestFlight untuk rilis App Store) hanya dengan izin eksplisit user per upload.
+- Upload build produksi (Play production/`.aab` ke store, TestFlight untuk rilis App Store) hanya dengan izin eksplisit user per upload, dan hanya setelah smoke live lulus.
+- Regresi penuh di beta wajib jalan sebelum user ditanya Konfirmasi rilis; suite kosong/tidak bisa jalan ditulis sebagai risiko, bukan lulus.
 
 **Agen selalu berhenti dan bertanya** bila: upload ke prod, akan merge PR tiket (setelah audit), hotfix (sementara manual: tanya dulu), nomor build tidak jelas, kredensial tidak ditemukan, dua fix hotfix bentrok, atau `build:heavy` / device sedang dipakai tiket Jira lain atau kamu sendiri untuk UAT (kamu memilih: tunggu, atau dahulukan/ambil alih untuk tugas ini).
 
-**Kredensial** dibaca dari file lokal (mis. `qa.local.properties`) dan tidak pernah ditulis ke Docs, Jira, atau MR. Data uji hanya di dev/staging, diawali kode tiket (mis. `PROJ-1234-user`).
+**Kredensial** dibaca dari file lokal (mis. `qa.local.properties`) dan tidak pernah ditulis ke Docs, Jira, atau MR. Data uji di dev/staging diawali kode tiket (mis. `PROJ-1234-user`). Regresi UI di **beta** (`/branch-manager`) boleh menulis data lewat app dengan akun uji, data diawali versi (mis. `v1.4.0-…`). Di **live** hanya smoke baca-saja (`smoke-live`). Cek API ke beta/live tetap method aman.
 
 ---
 [← kembali ke README](../README.md)

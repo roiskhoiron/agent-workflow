@@ -13,12 +13,17 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
 2. Pasang build dev yang disebut SPV: `--batch` = build batch, pasang **sekali** per device lalu uji semua tiket tugasmu di sana; `--separate` = build tiket itu. Tidak membangun atau meminta build sendiri.
 3. UI: bandingkan tiap layar dengan mockup di tugas (layout, spacing, teks, state kosong/loading/error, dark mode, layar kecil, micro-interaction dari Coder); beda ditandai kotak merah. Flow Maestro per TC, screenshot tiap langkah, kotak merah dari `maestro hierarchy` + `annotate.py`. iOS: inspeksi native, screenshot elemen, alert sistem, dan metrik UI pakai XCUITest runner (`ios-ui.sh`); cadangan saat Maestro terkendala per platform di `devices.md`.
 4. Server: jalankan TC di build variant tiap server yang disebut rencana (dev/beta/live). API: Schemathesis penuh hanya ke dev; beta/live hanya method aman tanpa menulis data. Kontrak: Pact jika ada kontrak di repo. Catat per TC × server: Lulus/Gagal/Tertahan, dan endpoint yang sudah/belum tersedia (bandingkan dengan Matriks env).
-5. Semua file kerja di `${TMPDIR:-/tmp}/qa/<KODE>/`, tidak di repo. Tulis `report.md` + `*.png` di sana sesuai bagian "Laporan uji" di `report-format.md`.
-6. Lepas semua kunci (kecuali tugas "siapkan UAT" dari SPV: kunci device **tidak** dilepas, SPV yang memindahkannya ke slot `human-<KODE>`), lalu lapor ke SPV: path laporan, ringkasan Lulus/Gagal/Tertahan.
+5. Regresi (suite + tag dari memory project, `rules.md` → Lokasi; data beta/live mengikuti aturan di sana):
+   - `/develop-tiket`: flow bertag `area-<modul>` untuk modul yang disebut SPV, di build dev yang sama.
+   - `/branch-manager` **regresi penuh**: seluruh suite di build **beta** dari `<sha-rilis>`, akun uji, data uji berawalan versi (`vX.Y.Z`).
+   - `/branch-manager` **smoke live**: hanya flow `smoke-live` di build live variant; tidak menulis data.
+   Laporan: tabel flow → Lulus/Gagal/Tertahan + screenshot langkah yang gagal; flow gagal karena flaky → ulang sekali, tetap gagal = Gagal.
+6. Semua file kerja di `${TMPDIR:-/tmp}/qa/<KODE>/`, tidak di repo. Tulis `report.md` + `*.png` di sana sesuai bagian "Laporan uji" di `report-format.md`.
+7. Lepas semua kunci (kecuali tugas "siapkan UAT" dari SPV: kunci device **tidak** dilepas, SPV yang memindahkannya ke slot `human-<KODE>`), lalu lapor ke SPV: path laporan, ringkasan Lulus/Gagal/Tertahan.
 
 ## Tidak boleh
 - Jira dan Claude Docs.
 - Push ke remote apa pun.
 - Upload build.
-- Memakai device/akun di luar jatah dari SPV; data uji di prod.
+- Memakai device/akun di luar jatah dari SPV; menulis data di live (smoke live hanya baca).
 - Menulis isi kredensial di laporan.

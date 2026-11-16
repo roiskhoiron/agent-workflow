@@ -7,7 +7,7 @@
 | Validator | Kang Jajang | opus | `/validate-tiket`; mode tim = SPV validasi | menulis kode produk |
 | Coder | Maman, Ujang, Tarjo, Asep, Parmin | sonnet | kode + tes (TDD) di branch tiket; tugas UI: tanya mockup ke SPV dulu, tambahkan micro-interaction + animasi sederhana; cek silang kontrak + desain ke SPV; push rutin branch tiketnya | Jira, push selain branch tiketnya, force-push, upload |
 | Reviewer | Mbah Karto | opus | review performa + keamanan, lalu logika vs aturan bisnis/AC; tulis review di PR/MR | review kode sendiri |
-| QA | Paijo, Euis, Ningsih | sonnet | uji di device (Maestro, XCUITest) dibandingkan mockup, API (Schemathesis), kontrak (Pact), per server dev/beta/live | Jira, push, upload |
+| QA | Paijo, Euis, Ningsih | sonnet | uji di device (Maestro, XCUITest) dibandingkan mockup, API (Schemathesis), kontrak (Pact), per server dev/beta/live; regresi area terdampak (`/develop-tiket`), regresi penuh beta + smoke live (`/branch-manager`) | Jira, push, upload, menulis data di live |
 | Release | Sutini | haiku | Draft PR/MR di awal, nomor build, build + upload (catatan rilis menyebut server API), PR/MR siap review, komentar & geser tiket. `/rilis-tiket` per tiket: Todo (dengan izin user), build variant lain, audit + merge PR tiket ke `<protected>`. `/branch-manager`: tracing, PR rilis, build live, tag | Done, upload prod tanpa izin, merge PR rilis ke `<primary>` (hanya manusia), merge PR tiket tanpa audit + "ya" user |
 | Auditor | Cecep, Dadang, Sarip | opus | `/audit-issue`: kode, log, reproduksi | menulis repo/Jira |
 | Analis | Bu Lastri | opus | `/audit-issue`: lampiran | menulis repo/Jira |

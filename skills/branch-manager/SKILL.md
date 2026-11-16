@@ -10,10 +10,10 @@ Baca dulu (jangan disalin ke sini): `~/.claude/skills/_agent-workflow-shared/rul
 ```mermaid
 flowchart LR
   F[fetch + cek leluhur] --> T[Tracing commit] --> C[Cek Done + Matriks env live]
-  C --> D[Docs + komentar Jira] --> P[PR rilis] --> Q{User}
+  C --> RG[Regresi penuh di build beta] --> D[Docs + komentar Jira] --> P[PR rilis] --> Q{User}
   Q -- Tolak --> S[Berhenti]
   Q -- Keluarkan tiket X --> R[PR revert] --> F
-  Q -- Konfirmasi --> B[Build live] --> W[Manusia merge PR rilis] --> G[Tag vX.Y.Z] --> U[Perbarui Docs + Jira]
+  Q -- Konfirmasi --> B[Build live] --> SM[Smoke live] --> W[Manusia merge PR rilis] --> G[Tag vX.Y.Z] --> U[Perbarui Docs + Jira]
 ```
 
 ## Langkah
@@ -28,28 +28,31 @@ flowchart LR
    - Baris PR revert (`revert: <KODE-X> keluar dari rilis ...`) dan pasangan revert-dari-revert-nya → dicatat **"dikeluarkan"**, bukan isi rilis.
 4. **Cek isi:** tiket belum **Done** atau commit tak terlacak → tandai, masuk rekomendasi (mis. keluarkan tiket X, tunda rilis, minta kolega memindah ke Done).
 5. **Matriks env live** untuk endpoint semua tiket (method aman saja, seperti `/develop-tiket` langkah 3; tanpa izin per run, tanpa kunci device). **Belum ada** / **Beda kontrak** → tandai, masuk rekomendasi.
-6. **Claude Docs `Perubahan rilis vX.Y.Z`** sesuai `report-format.md` → Laporan rilis (mermaid, versi + hash ref termasuk `<sha-rilis>`, tabel perubahan, tak terlacak/belum Done, Matriks env live, rekomendasi).
+5b. **Regresi penuh di beta** (gerbang utama sebelum manusia ditanya): buat worktree rilis `git -C <checkout> worktree add --detach ../<repo>-rilis-vX.Y.Z <sha-rilis>` (dipakai lagi di langkah 9), kunci `build:heavy`, build **beta variant** Android + iOS untuk dipasang di device (tanpa upload), lepas kunci. Panggil **QA** (`qa.md`, mode regresi penuh) dengan suite dari memory project (`rules.md` → Lokasi; belum ada → tanya, simpan), jatah device + akun uji lewat `device-pick.sh`/`device-lock.sh` (owner `rilis-vX.Y.Z-qa<n>`). Data uji berawalan `vX.Y.Z`. Flow gagal → cocokkan dengan tiket yang menyentuh modulnya (tabel tracing), masuk rekomendasi (keluarkan tiket X / tunda rilis). Suite kosong → tulis "belum ada suite regresi" sebagai risiko di rekomendasi, jangan dianggap lulus.
+6. **Claude Docs `Perubahan rilis vX.Y.Z`** sesuai `report-format.md` → Laporan rilis (mermaid, versi + hash ref termasuk `<sha-rilis>`, tabel perubahan, tak terlacak/belum Done, Matriks env live, hasil regresi beta, rekomendasi).
 7. **Komentar di `KODE-TIKET`** (`addCommentToJiraIssue`, format yang sama): baris pertama link dokumen, lalu versi, jumlah perubahan, rekomendasi. `KODE-TIKET` tidak ditransisikan.
 8. **PR rilis** (tanpa push branch). Isi (file sementara `<body>`): link dokumen, `<sha-rilis>`, tabel perubahan, catatan **"merge dengan merge commit, bukan squash"**. Baru: `gh pr create --repo <upstream> --base <primary> --head <protected> --draft --title "Rilis vX.Y.Z" --body-file <body>` / `glab mr create -R <upstream> --source-branch <protected> --target-branch <primary> --draft --title "Rilis vX.Y.Z" --description "$(cat <body>)"`. Sudah ada → `gh pr edit <N> --repo <upstream> --title "Rilis vX.Y.Z" --body-file <body>` / `glab mr update <N> -R <upstream> --title "Rilis vX.Y.Z" --description "$(cat <body>)"`.
 
-**Tanya user** (ringkasan + rekomendasi + link dokumen dan PR rilis): **Konfirmasi / Tolak / Ikuti rekomendasi agen**.
+**Tanya user** (ringkasan + hasil regresi + rekomendasi + link dokumen dan PR rilis): **Konfirmasi / Tolak / Ikuti rekomendasi agen**.
 - **Tolak** → berhenti; PR rilis tetap Draft atau ditutup sesuai jawaban.
 - **Ikuti rekomendasi agen** → jalankan rekomendasi yang bisa dikerjakan agen (mis. keluarkan tiket X di bawah); yang butuh manusia (tiket ke Done, back-merge) → tunggu, lalu ulang dari langkah 1.
 - **Keluarkan tiket X** (dari rekomendasi atau permintaan user) → PR revert sesuai `build-release.md` → Rilis: branch `revert/<KODE-X>-<n>` di downstream (`<n>` = nomor urut berikutnya; cek PR `revert/<KODE-X>-*` yang sudah ada) dari `upstream/<protected>`, `git revert -m 1 <merge commit>` (atau commit squash-nya), push ke `origin`, PR ke `<protected>` berjudul `revert: <KODE-X> keluar dari rilis vX.Y.Z`. Merge PR revert hanya setelah "ya" (aturan Merge PR tiket). Komentar di tiket X: dikeluarkan dari vX.Y.Z + link PR revert. Lalu **ulang dari langkah 1**.
 - **Konfirmasi** (atau rekomendasi sudah dijalankan dan tracing bersih) → langkah 9.
 
-9. **Build live** tepat dari `<sha-rilis>` di worktree sementara, sejajar checkout (`rules.md` → Workspace & worktree): `git -C <checkout> worktree add --detach ../<repo>-rilis-vX.Y.Z <sha-rilis>`. `upstream/<protected>` sudah maju dari `<sha-rilis>` → lapor dan ulang dari langkah 1 (jangan build commit yang belum dilacak). Kunci `build:heavy` (`devices.md` → Build berat), build Android `.aab` + iOS TestFlight versi produksi (`build-release.md` → Nomor build, Upload). Upload build produksi (Play production/`.aab` ke store, TestFlight untuk rilis App Store) butuh **izin eksplisit user per upload**. Catatan rilis menyebut nama server + base URL API live (tanpa kredensial). Lepas kunci, lalu hapus worktree (`git -C <checkout> worktree remove ../<repo>-rilis-vX.Y.Z`).
+9. **Build live** tepat dari `<sha-rilis>` di worktree rilis dari langkah 5b (sudah dihapus → buat ulang dengan perintah yang sama; `rules.md` → Workspace & worktree). Ada PR revert yang ter-merge sejak regresi (sha-rilis berubah) → regresi 5b diulang dulu. `upstream/<protected>` sudah maju dari `<sha-rilis>` → lapor dan ulang dari langkah 1 (jangan build commit yang belum dilacak). Kunci `build:heavy` (`devices.md` → Build berat), build Android `.aab` + iOS TestFlight versi produksi (`build-release.md` → Nomor build, Upload). Upload build produksi (Play production/`.aab` ke store, TestFlight untuk rilis App Store) butuh **izin eksplisit user per upload**. Catatan rilis menyebut nama server + base URL API live (tanpa kredensial). Lepas kunci.
+9b. **Smoke live** sebelum minta izin upload produksi: QA (`qa.md`, mode smoke live) memasang build live variant di device (Android: APK universal dari `.aab` lewat `bundletool build-apks --mode=universal`; iOS: scheme live yang sama ke device/simulator) dan menjalankan flow `smoke-live` saja (baca saja, tanpa menulis data). Gagal → jangan minta izin upload; lapor + rekomendasi, tanya user. Lalu hapus worktree (`git -C <checkout> worktree remove ../<repo>-rilis-vX.Y.Z`).
 10. **Tunggu merge oleh manusia (Release Manager):** cek `gh pr view <N> --repo <upstream> --json state,mergeCommit` (merge commit: `--jq .mergeCommit.oid`) / `glab mr view <N>`. Belum merged → ingatkan user, berhenti (jalankan lagi nanti; langkah yang sudah selesai dilewati). Merged → `git fetch upstream`, `git rev-list --parents -n1 <mergeCommit>`: tanpa parent kedua (squash) → lapor dan tanya sebelum tag; parent kedua ≠ `<sha-rilis>` (ada commit baru ikut masuk) → lapor, ulang tracing dari langkah 1 sebelum tag; sama → tag beranotasi `git tag -a vX.Y.Z <merge commit> -m "Rilis vX.Y.Z"`, push ke `upstream` dan `origin`.
 11. **Perbarui dokumen + komentar** di `KODE-TIKET`: build (nomor + server API), link PR rilis, tag.
 
 Ringkasan ke user:
-| Versi | Perubahan | Tak terlacak / belum Done | PR rilis | Build | Tag |
-|---|---|---|---|---|---|
+| Versi | Perubahan | Tak terlacak / belum Done | Regresi beta | Smoke live | PR rilis | Build | Tag |
+|---|---|---|---|---|---|---|---|
 
 **Larangan:** agen tidak pernah merge PR rilis, push branch ke `upstream`, menimpa tag, atau memindah tiket ke Done.
 
 ## Berhenti lebih awal / galat
 - Atlassian MCP atau `gh`/`glab` tidak terjangkau, `<primary>`/`<protected>` belum jelas → berhenti dan tanya.
 - `release-trace.sh` exit 3 → back-merge hotfix dulu (manusia); jangan membuat PR rilis.
+- Regresi/smoke tidak bisa jalan (device/akun uji tidak ada) → tulis Tertahan + alasan di laporan dan rekomendasi; jangan dianggap lulus.
 - Build terhenti/dibatalkan → lepas kunci `build:heavy` (`release build:heavy <owner>`) dan hapus worktree rilis sebelum lapor.
 - Tidak ada merge PR revert, upload produksi, atau tag tanpa jawaban yang diminta di atas.

@@ -42,8 +42,9 @@ Di Temuan, sebut ref dokumen yang dibaca (hasil sinkron sumber).
 3. **Keputusan**: kalimat tebal **Siap review** atau **Belum siap** + alasan.
 4. **Satu bagian per TC**: hasil di kalimat pertama, langkah bernomor, screenshot berurutan; untuk API/kontrak tampilkan tabel endpoint → hasil.
 5. **Server**: tabel build variant → env + base URL API; tabel TC × server (dev/beta/live) Lulus/Gagal/Tertahan; endpoint yang sudah dan belum tersedia per server (Matriks env).
-6. **UI vs mockup** (tiket UI): tabel layar/state → sesuai/beda, screenshot bertanda di samping acuan mockup.
-7. **Temuan**: branch + commit, nomor build dev/beta + link distribusi, data uji, checklist tindak lanjut.
+6. **Regresi area terdampak**: modul → flow `area-<modul>` → Lulus/Gagal/Tertahan; flow baru yang ditambahkan ke suite.
+7. **UI vs mockup** (tiket UI): tabel layar/state → sesuai/beda, screenshot bertanda di samping acuan mockup.
+8. **Temuan**: branch + commit, nomor build dev/beta + link distribusi, data uji, checklist tindak lanjut.
 
 ## Laporan audit (`/audit-issue`)
 Satu dokumen per audit, dibuat di awal audit dengan blok `pending` per bagian, lalu diisi dan dirapikan menjadi laporan final (dokumen yang sama). Urutan bagian:
@@ -115,7 +116,8 @@ Dokumen Claude Docs berjudul `Perubahan rilis vX.Y.Z`. Urutan isi:
 
 4. Commit tak terlacak (tanpa tiket) dan tiket belum Done: ditandai.
 5. Matriks env live untuk endpoint semua tiket.
-6. Rekomendasi agen.
-7. Build + server API (nama server + base URL live), link PR rilis, tag (diisi setelah ada).
+6. Regresi penuh di beta (`<sha-rilis>`, build beta + base URL API beta): tabel flow → Lulus/Gagal/Tertahan → tiket terkait; screenshot flow gagal.
+7. Rekomendasi agen.
+8. Build + server API (nama server + base URL live), hasil smoke live, link PR rilis, tag (diisi setelah ada).
 
 Komentar Jira di tiket rilis: baris pertama link dokumen, lalu ringkasan versi, jumlah perubahan, dan rekomendasi.

@@ -95,6 +95,7 @@ flowchart TD
 - **Reviewer:** prioritas performa ringan + keamanan, lalu logika sesuai aturan bisnis dan AC. Review ditulis di PR/MR.
 - **Branch batch** hanya salinan lokal untuk build QA. Branch tiket tetap utuh dan di-push; PR/MR tiap tiket bersih dari tiket lain.
 - **QA** membandingkan UI dengan mockup dan menguji per server; laporan menyorot endpoint yang sudah dan belum tersedia di dev/beta/live.
+- **Regresi area terdampak:** QA juga menjalankan flow suite regresi (bertag `area-<modul>`) untuk modul yang disentuh tiket. Flow TC yang lulus dan stabil ditambahkan Coder ke suite di branch tiket, jadi suite tumbuh dari tiket ke tiket. Lokasi suite disimpan di memory project.
 - **Tiap build variant** disertai nama server + base URL API-nya di catatan rilis, laporan, PR/MR, dan komentar Jira.
 - **SPV memantau semua sub-agent sampai tugasnya tuntas**: status berkala, cek hasil benar-benar ada, lalu menghentikan teammate dan menutup panelnya.
 - Di `--batch`, build baru jalan setelah **semua** tiket lolos review (atau dikeluarkan dari batch dengan alasan tertulis). Perbaikan setelah QA dikumpulkan dulu, baru satu build ulang.
@@ -117,9 +118,10 @@ Tiket yang pernah dikeluarkan dari rilis: PR **revert dari revert** dulu, baru P
 `/branch-manager --rilis KODE` = rilis **per versi** (`KODE` = tiket rilis tempat laporan dikomentari). Agen bekerja dulu, lalu bertanya: **Konfirmasi / Tolak / Ikuti rekomendasi agen**.
 1. `git fetch`, lalu `release-trace.sh` melacak tiap commit `<primary>..<protected>` ke PR/MR, tiket, dan programmer. Hotfix belum di-back-merge → berhenti dan tanya.
 2. Cek semua tiket Done dan Matriks env live; yang belum → rekomendasi.
+2b. **Regresi penuh di beta** (gerbang utama): build beta dari commit rilis yang sama (`<sha-rilis>`), QA menjalankan seluruh suite regresi di device dengan akun uji. Hasilnya masuk laporan rilis; flow gagal dikaitkan ke tiket yang menyentuh modulnya → rekomendasi. Manusia melihat hasil ini sebelum memutuskan.
 3. Laporan Claude Docs `Perubahan rilis vX.Y.Z` + komentar di tiket rilis + PR rilis `<protected>` → `<primary>` (merge commit, bukan squash).
 4. Keluarkan tiket X → agen membuat PR revert, lalu tracing diulang.
-5. Setelah konfirmasi: build live (`.aab` + TestFlight; upload produksi butuh izin), PR rilis **di-merge manusia**, lalu tag `vX.Y.Z` di-push ke `upstream` dan `origin`.
+5. Setelah konfirmasi: build live (`.aab` + TestFlight) lalu **smoke live** (flow `smoke-live`, baca saja, tanpa menulis data); smoke gagal → tidak minta izin upload. Upload produksi butuh izin, PR rilis **di-merge manusia**, lalu tag `vX.Y.Z` di-push ke `upstream` dan `origin`.
 
 ## `/audit-issue`
 1. Langsung membuat dokumen laporan di Claude Docs, lalu memecah keluhan jadi pertanyaan.

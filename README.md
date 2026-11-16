@@ -23,7 +23,7 @@ Ketik perintah ini di Claude Code, di dalam terminal Orca:
 | `/validate-tiket KODE... [--solo\|--tim]` | Cek tiket layak dikerjakan; bug direproduksi di device. `--tim`: dibagi ke PdM, Product Designer, Contract Runner, HoE, PjM (+ Spesialis eskalasi). Hasil: laporan bergambar + komentar Jira | mana saja |
 | `/develop-tiket KODE... [--solo\|--tim] [--batch\|--separate] [--uat]` | Rencana, kode (TDD), review, uji di device, build, PR/MR, komentar Jira, tiket ke Ready To Review | workspace domain |
 | `/rilis-tiket KODE...` | Tindak lanjut feedback QA per tiket: kembalikan ke Todo, build variant lain (Beta/Prod), atau audit + merge PR tiket | root project atau domain |
-| `/branch-manager --rilis KODE` | Rilis per versi: tracing perubahan ke tiket/PR/programmer, laporan Claude Docs, PR rilis, build live, tag setelah PR rilis di-merge manusia | root project atau domain |
+| `/branch-manager --rilis KODE` | Rilis per versi: tracing perubahan ke tiket/PR/programmer, regresi penuh di build beta, laporan Claude Docs, PR rilis, build live + smoke live, tag setelah PR rilis di-merge manusia | root project atau domain |
 | `/audit-issue "teks" [--solo\|--tim] [lampiran...]` | Telusuri keluhan yang belum jadi tiket, **hanya-baca**. Hasil: laporan + saran tiket | mana saja |
 
 Contoh:
