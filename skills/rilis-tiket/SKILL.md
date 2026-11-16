@@ -1,56 +1,50 @@
 ---
 name: rilis-tiket
-description: Jalankan rilis atau hotfix dari tiket Jira rilis (cek kondisi repo, branch release/hotfix di downstream, MR per tiket, cek manifest, build beta, satu MR ke upstream, komentar Jira). Dipanggil lewat `/rilis-tiket KODE-RILIS` atau `/rilis-tiket baru release|hotfix` dari worktree utama (primary) atau worktree domain Orca. Use when asked to cut a release or hotfix from a Jira release ticket; kata kunci - rilis tiket, buat rilis, hotfix, release request.
-argument-hint: KODE-RILIS | baru release|hotfix
+description: Baca feedback QA terakhir tiap tiket Jira (Ready To Review/Done) lalu bertindak - kembalikan ke Todo, build variant lain (Beta/Prod), atau audit + merge PR/MR tiket ke branch integrasi. Dipanggil lewat `/rilis-tiket KODE...`. Use when asked to follow up QA feedback, build another variant, or merge a ticket PR; kata kunci - rilis tiket, feedback QA, tolak tiket, build beta, merge PR tiket.
+argument-hint: KODE...
 ---
-Jalankan satu rilis/hotfix (`$ARGUMENTS`). Sesi ini = **Release**: ikuti `~/.claude/agents/release.md`. Keputusan tingkat SPV (lanjut/berhenti, isi rilis) diserahkan ke user lewat chat (ringkasan + satu saran).
+Tindak lanjuti feedback QA untuk satu atau lebih tiket (`$ARGUMENTS`). Sesi ini = **Release**: ikuti `~/.claude/agents/release.md`. Keputusan (izin Todo, izin merge, izin Prod) ke user lewat chat: ringkasan + satu saran. Rilis per versi (PR rilis, build live, tag) bukan di sini: itu `/branch-manager --rilis`.
 
-Baca dulu (jangan disalin ke sini): `~/.claude/skills/_agent-workflow-shared/rules.md`, `build-release.md`, `report-format.md`, `credentials.md`. Skrip: `$AGENT_WORKFLOW_DIR/bin/<skrip>` (`AGENT_WORKFLOW_DIR` diisi seperti di `rules.md`). Remote: `origin` = downstream (fork), `upstream` = repo utama.
+Baca dulu (jangan disalin ke sini): `~/.claude/skills/_agent-workflow-shared/rules.md`, `build-release.md` (Merge PR tiket), `report-format.md`, `credentials.md`. Skrip: `$AGENT_WORKFLOW_DIR/bin/<skrip>` (`AGENT_WORKFLOW_DIR` diisi seperti di `rules.md`). Remote: `origin` = downstream (fork), `upstream` = repo utama.
 
 ```mermaid
 flowchart LR
-  T[Tiket rilis + manifest] --> K[Cek kondisi repo] --> A{Tanya user}
-  A -- Ya --> B[Branch rilis di downstream] --> M[MR per tiket + merge]
-  M --> C{manifest-check}
-  C -- exit 1 --> S[Stop & lapor]
-  C -- exit 0 --> D[Build beta] --> U[Satu MR ke upstream] --> J[Komentar Jira] --> G[Tag vX.Y.Z setelah merge]
+  T[Tiket + feedback QA terakhir] --> D{Keadaan}
+  D -- Done + PR/MR --> A[Audit] --> M[Izin ya] --> G[Merge PR tiket]
+  D -- Ditolak --> R[Izin user] --> O[Todo + komentar]
+  D -- Minta build --> B[Sinkron dokumen + Matriks env] --> V[Build variant + komentar]
+  D -- Tanpa feedback --> N[Lapor saja]
 ```
 
 ## Langkah
-0. **Guard:** `orca worktree current --json` harus berhasil (repo dikelola Orca). Primary maupun worktree domain boleh: langkah 0–4 hanya baca + Jira, perubahan file hanya di child worktree rilis (langkah 5). Di primary jangan edit file atau checkout branch lain. Prasyarat: Atlassian MCP terjangkau (`mcp__claude_ai_Atlassian__atlassianUserInfo`), `git remote -v` punya `origin` dan `upstream`.
-1. **Tiket rilis:**
-   - `baru release|hotfix` → tanya project, versi `vX.Y.Z`, dan daftar tiket fix/fitur. Buat tiket (`createJiraIssue`) berjudul `[release-request] vX.Y.Z …` / `[hotfix-release] vX.Y.Z …`, lalu link tiap tiket (`createIssueLink`). Catat KODE-RILIS.
-   - `KODE-RILIS` → `getJiraIssue` + komentar. Judul harus diawali `[release-request]` (jenis **release**) atau `[hotfix-release]` (jenis **hotfix**); selain itu berhenti dan tanya.
-   - Versi = `vX.Y.Z` pertama di judul; tidak ada → tanya.
-   - **Manifest** = tiket yang ter-link ke tiket rilis (Atlassian MCP). Kosong → berhenti dan tanya.
-2. **Hotfix sudah di-build?** Jika `hotfix/vX.Y.Z` sudah ada di `origin` dan komentar tiket rilis sudah mencatat build beta/prod → jangan tambah tiket. Manifest berbeda dari isi branch → berhenti, sarankan versi berikutnya (tiket rilis baru).
-3. **Cek kondisi repo** (periksa dulu, `rules.md`): `git fetch --multiple origin upstream --tags`, lalu bandingkan (`<primary>`/`<protected>` dari memory project, `rules.md` → Lokasi; belum ada → tanya, simpan)
-   - `upstream/<primary>` vs `upstream/<protected>` (`git log --oneline A..B` dua arah) dan tag versi live terbaru (`git describe --tags --abbrev=0 upstream/<primary>`);
-   - fix lama yang ada di `<primary>`/tag live tapi belum di-merge balik ke `<protected>`;
-   - tiket manifest: `git branch -r --list 'origin/*/<KODE>'` harus tepat satu (tidak ada/lebih dari satu → berhenti dan tanya);
-   - **hotfix**, per tiket: `git merge-base --is-ancestor <ref live> origin/<branch tiket>` sukses **dan** `git log --oneline --invert-grep --grep=<KODE> <ref live>..origin/<branch tiket>` kosong (semua commit menyebut KODE itu). Gagal → berhenti dan tanya, saran: cherry-pick commit tiket ke branch baru dari `<ref live>` (mencegah commit `<protected>` ikut ke hotfix);
-   - **release**, per tiket: `git merge-base --is-ancestor origin/<branch tiket> upstream/<protected>` sukses → sudah termasuk, tidak perlu MR (sebut di ringkasan).
-   Catat `<ref live>` (`upstream/<primary>` atau tag live) untuk langkah 5 dan 7.
-   Tulis ringkasan (tabel) + **satu saran** (base branch, versi, tiket yang belum siap).
-4. **Selalu berhenti dan tanya** (juga di mode otonom): "Buat `<jenis>/vX.Y.Z` dari `<base>` dengan manifest …?" Tanpa "Ya" → berhenti. Jawaban + temuan diberikan ke user sebagai blok `## Catatan agen` untuk di-commit sendiri ke `CLAUDE.md` project (worktree primary diblokir guard, dan branch rilis tidak boleh memuat commit di luar manifest).
-5. **Buat branch di downstream** (tidak pernah di upstream):
-   - release: base `upstream/<protected>`.
-   - hotfix: base `<ref live>` (`upstream/<primary>` atau tag live), **tidak pernah** `<protected>`.
-   - `git push origin <base>^{commit}:refs/heads/<jenis>/vX.Y.Z` (`^{commit}` perlu untuk tag beranotasi), lalu child worktree: `orca worktree create --name <jenis>-vX.Y.Z --parent-worktree current --base-branch origin/<jenis>/vX.Y.Z --reference KODE-RILIS`.
-6. **MR per tiket ke branch itu di downstream** (kecuali yang sudah termasuk di langkah 3; `git remote get-url origin` → GitHub/GitLab):
-   - GitHub: `gh pr create --repo <fork-owner>/<repo> --base <jenis>/vX.Y.Z --head <branch tiket> --title "<KODE> …"`
-   - GitLab: `glab mr create --repo <fork-ns>/<repo> --source-branch <branch tiket> --target-branch <jenis>/vX.Y.Z --title "<KODE> …"`
-   Gabung di child worktree: `git merge --no-ff origin/<branch tiket>` per tiket. **Konflik** → `git merge --abort`, berhenti dan tanya (sebut file + dua tiket). Lalu `git push origin HEAD:<jenis>/vX.Y.Z` (nama branch lokal worktree bisa beda; MR otomatis tercatat merged).
-7. **Cek manifest:** `$AGENT_WORKFLOW_DIR/bin/manifest-check.sh <ref live> origin/<jenis>/vX.Y.Z <KODE manifest...>` (`<ref live>` = ref yang sama dari langkah 3/5).
-   - Exit 0 → lanjut. Exit 1 → berhenti, laporkan dua daftar dari skrip. Exit 2 → salah pakai/ref tidak ada: perbaiki perintah, jangan lanjut build.
-8. **Build** (sesuai `build-release.md`, antre `build:heavy`; dipegang tiket Jira lain → tanya user tunggu atau dahulukan, `devices.md` → Build berat): versi di file project harus `X.Y.Z` (beda → tanya). Nomor: `build-number.sh next asc=… firebase=… tag=… project=…`; exit 3 → berhenti dan tanya. Build beta → Firebase/TestFlight, catatan rilis berisi semua KODE manifest. **Prod hanya lewat gate/izin eksplisit**, tidak pernah otomatis.
-9. **Satu MR ke upstream** dari branch rilis (base `<primary>`):
-   - GitHub: `gh pr create --repo <upstream-owner>/<repo> --base <primary> --head <fork-owner>:<jenis>/vX.Y.Z --title "[<prefix>] vX.Y.Z" --body "<manifest, build, link laporan>"`
-   - GitLab: `glab mr create --repo <upstream-ns>/<repo> --head <fork-ns>/<repo> --source-branch <jenis>/vX.Y.Z --target-branch <primary> --title "…"`
-   Hanya satu MR per rilis; sudah ada → perbarui, jangan buat baru.
-10. **Komentar tiket rilis** (`addCommentToJiraIssue`): bila ada laporan Claude Docs, baris pertama = link-nya; lalu manifest (tabel KODE → MR), nomor + link build beta, link MR upstream, hasil `manifest-check`. Tanpa kredensial. Tidak memindah ke Done.
-11. **Tag versi** setelah MR upstream di-merge. Cek dulu: MR berstatus merged, versi di file project pada commit merge = `X.Y.Z`, dan tag `vX.Y.Z` belum ada di kedua remote. Lalu `git fetch upstream`, `git tag -a vX.Y.Z <commit merge> -m "<Platform> X.Y.Z (build) — <KODE manifest> (rilis KODE-RILIS)"`, `git push upstream vX.Y.Z`, `git push origin vX.Y.Z`. Belum di-merge → cukup ingatkan. Tag yang sudah ada tidak pernah ditimpa/dihapus; branch tetap tidak pernah di-push ke `upstream`.
-12. **Ringkas:** pastikan kunci `build:heavy` dilepas; tabel `KODE | MR downstream | Status` + branch, build, MR upstream.
+0. **Prasyarat (sekali):** Atlassian MCP terjangkau (`mcp__claude_ai_Atlassian__atlassianUserInfo`); `~/.agent-workflow/jira-transitions.json` punya entri project dengan id **Todo** (belum → "Setup transisi Jira" di `rules.md`); `<primary>`/`<protected>` dan strategi merge PR tiket (squash atau merge commit) dari memory project (`rules.md` → Lokasi; belum ada → tanya, simpan). `git fetch upstream origin`.
+1. **Per tiket, baca keadaan:** `getJiraIssue` + komentar (status Ready To Review/Done, tiket lain → lapor dan lewati), PR/MR-nya (`gh pr list --search <KODE>` / `glab mr list`) + komentar review. **Feedback QA terakhir** = komentar manusia terbaru (Jira + PR/MR) setelah komentar agen terakhir.
+2. **Pilih tindakan:**
+   | Keadaan | Tindakan |
+   |---|---|
+   | Ditolak QA | 3a |
+   | Positif, belum Done, QA minta build variant lain (Beta/Prod) | 3b |
+   | Done + punya PR/MR | 3c |
+   | Tidak ada feedback QA | Lapor, tidak ada tindakan |
+
+   Beberapa keadaan sekaligus → urutan **Done > ditolak > minta build**. Feedback saling bertentangan → tanya user, jangan menebak.
+3. **Tindakan:**
+   - **3a Ditolak:** ringkas arahan QA (apa yang ditolak, dari siapa, di mana). Minta izin user; "ya" → `transitionJiraIssue` ke **Todo** (id dari `jira-transitions.json`) + komentar ringkasan arahan (baris pertama link PR/MR bila ada). Putaran berikutnya lewat `/validate-tiket` (validasi ulang) lalu `/develop-tiket`. Tidak jawab ya → tidak ada perubahan.
+   - **3b Minta build:**
+     1. **Sinkron dokumen** sama persis dengan `/validate-tiket` langkah 1 (kontrak API, blueprint, mockup; catat ref).
+     2. **Cek ulang Matriks env** untuk server tujuan (method aman saja, seperti `/develop-tiket` langkah 3; tanpa fuzzing, tanpa menulis data). Endpoint **Belum ada** / **Beda kontrak** di server tujuan → berhenti dan tanya.
+     3. Pastikan isi tiket ada di build itu (branch/PR tiket; tidak ada → tanya). Build variant yang diminta dari worktree tiket yang ada (`build-release.md`: nomor build, upload; antre `build:heavy`). **Prod: izin eksplisit** dulu.
+     4. Catatan rilis dan komentar Jira (baris pertama link laporan/build) menyebut **nama server + base URL API** build itu, tanpa kredensial.
+   - **3c Done:** audit sesuai tabel `build-release.md` → Merge PR tiket (approved, CI hijau, diff sesuai tiket, Matriks env live **Sesuai kontrak**).
+     - Tiket pernah dikeluarkan dari rilis (ada PR revert `revert/<KODE>` yang ter-merge) → buat PR **revert dari revert** dulu (aturan di `build-release.md` → Rilis) dan merge setelah "ya"; baru PR tiket.
+     - Lolos → minta "ya" user, lalu merge: `gh pr merge <n> --repo <upstream> --squash|--merge` / `glab mr merge <n>`, strategi dari memory. Gagal satu syarat → lapor + saran, tidak merge. Komentar Jira (link PR + commit merge).
+4. **Ringkasan** ke user:
+   | KODE | Feedback | Tindakan | Build/PR | Status |
+   |---|---|---|---|---|
+
+Agen tidak pernah memindah tiket ke Done dan tidak pernah merge PR rilis ke `<primary>`.
 
 ## Berhenti lebih awal / galat
-Lepas kunci milik sesi ini (`AGENT_LOCK_PID=$PPID "$AGENT_WORKFLOW_DIR/bin/device-lock.sh" release build:heavy <owner>`), laporkan langkah terakhir, branch, dan MR yang sudah dibuat. Diblokir guard → laporkan pesannya, jangan cari jalan memutar.
+- Atlassian MCP atau `gh`/`glab` tidak terjangkau, id Todo belum ada → berhenti dan tanya.
+- Build terhenti/dibatalkan → lepas kunci `build:heavy` (`release build:heavy <owner>`, `devices.md` → Build berat) sebelum lapor.
+- Tidak ada yang di-merge atau dibuild tanpa jawaban "ya" yang diminta di atas.
