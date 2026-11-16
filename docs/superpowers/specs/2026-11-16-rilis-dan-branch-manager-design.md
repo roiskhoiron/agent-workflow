@@ -1,6 +1,6 @@
 # Rilis per tiket + /branch-manager — rancangan
 
-Status: draf, menunggu persetujuan user (2026-11-16).
+Status: disetujui user, diimplementasikan (2026-11-16).
 
 ## Tujuan dan alasan
 Model branch berubah (gambar user): **tidak ada branch rilis lagi**. Downstream (fork, `origin`) murni untuk menyelesaikan tiket (`feature/*`, `bugfix/*`, PR/MR ke `<protected>`); integrasi di `<protected>` upstream; produksi di `<primary>` upstream dengan tag `vX.Y.Z`; hotfix dari `<primary>` lalu back-merge ke `<protected>`.
