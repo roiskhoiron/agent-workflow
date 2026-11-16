@@ -57,14 +57,16 @@ Pilihan `/develop-tiket`:
 flowchart TD
   G[Cek awal: MCP, transisi, akun uji, sinkron dokumen] --> V{Gerbang validasi}
   V -->|Tidak layak / belum divalidasi| A[Tanya kamu]
-  V -->|Layak / Layak dengan catatan| S[Baca tiket + Acuan tiket, rencana & test case di Claude Docs] --> K[Coder: kode + tes TDD di worktree tiket]
-  K --> R{Reviewer: performa & crash}
+  V -->|Layak / Layak dengan catatan| W[Worktree + branch tiket dari base, Matriks env dev/beta/live]
+  W --> S[Rencana & test case di Claude Docs] --> DR[Release: Draft PR/MR per tiket]
+  DR --> K[Coder: cek silang kontrak + desain ke SPV, TDD, push rutin]
+  K --> R{Reviewer: performa + keamanan, lalu logika vs AC; review di PR/MR}
   R -->|ada temuan wajib| K
   R -->|bersih| M[--batch: merge ke branch batch]
   M --> B[Release: build dev]
   B --> Q[QA: uji di device]
   Q -->|gagal| K
-  Q -->|lulus, --uat: UAT kamu dulu| P[Laporan uji, push origin, PR/MR, komentar Jira]
+  Q -->|lulus, --uat: UAT kamu dulu| P[Laporan uji, PR/MR ditandai siap, komentar Jira]
   P --> T[Tiket ke Ready To Review + hapus worktree tiket]
 ```
 - **Sebelum mulai**, SPV menyinkronkan dokumen (business discovery, mockup, kontrak API, blueprint; sama seperti `/validate-tiket`) dan membaca laporan validasi terakhir:
@@ -78,6 +80,15 @@ flowchart TD
 
   Dokumen yang berubah sejak validasi dan menyentuh AC, desain, atau kontrak → SPV menyebut perbedaannya dan bertanya. Link dokumen terbaru (**Acuan tiket**) dibawa ke rencana, Coder, dan QA.
 - **Basecode:** agen menyimpan dua branch per repo di memory project: **primary** (produksi/live) dan **protected** (integrasi). Belum ada → agen bertanya sekali. Tiket bercabang dari versi **terbaru di remote** (SPV `git fetch` dulu): hotfix dari `upstream/<primary>` (atau tag live), feature request/fix dari `upstream/<protected>`, atau `origin/release/...`/`origin/hotfix/...` bila branch rilis tiketnya sudah ada. Base + hash commit dicatat di rencana. Worktree tiket lama yang tertinggal dari base → SPV bertanya rebase/merge atau lanjut.
+- **Matriks env** (sebelum rencana): endpoint tiket dicek di tiap server. Dev: Schemathesis + Pact penuh; beta dan live: hanya method aman, tanpa fuzzing dan tanpa menulis data. Hasil per endpoint: Sesuai kontrak / Beda kontrak / Belum ada / Tidak dicek. Beda kontrak → SPV bertanya. URL server dan pemetaan build variant → server disimpan di memory project.
+- **Rencana** berpijak pada worktree tiket, Acuan tiket, dan Matriks env; tiap test case menyebut server yang diuji. Endpoint yang belum ada di suatu server → test case server itu Tertahan sejak awal.
+- **Draft PR/MR** dibuat Release per tiket sebelum Coder mulai. Coder push rutin ke branch tiketnya, jadi Draft selalu terbarui; di akhir PR/MR ditandai siap review.
+- **Coder** wajib cek silang ke SPV sebelum kode: kontrak API dan detail desain yang di-slice.
+- **Reviewer:** prioritas performa ringan + keamanan, lalu logika sesuai aturan bisnis dan AC. Review ditulis di PR/MR.
+- **Branch batch** hanya salinan lokal untuk build QA. Branch tiket tetap utuh dan di-push; PR/MR tiap tiket bersih dari tiket lain.
+- **QA** membandingkan UI dengan mockup dan menguji per server; laporan menyorot endpoint yang sudah dan belum tersedia di dev/beta/live.
+- **Tiap build variant** disertai nama server + base URL API-nya di catatan rilis, laporan, PR/MR, dan komentar Jira.
+- **SPV memantau semua sub-agent sampai tugasnya tuntas**: status berkala, cek hasil benar-benar ada, lalu menghentikan teammate dan menutup panelnya.
 - Di `--batch`, build baru jalan setelah **semua** tiket lolos review (atau dikeluarkan dari batch dengan alasan tertulis). Perbaikan setelah QA dikumpulkan dulu, baru satu build ulang.
 - Tiket yang macet dikeluarkan dari batch dan dilaporkan, tidak dijalankan sendiri diam-diam.
 - Dengan `--uat`, device fisik dipindah ke kamu (kunci `human-<KODE>`); crash selama UAT mengembalikan tiket ke Coder. Pemantauan log gagal → SPV memberi tahu, dan hasil UAT mengikuti laporanmu.

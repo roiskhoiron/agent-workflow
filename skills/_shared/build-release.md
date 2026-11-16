@@ -46,7 +46,8 @@ iOS ke TestFlight: `xcodebuild -exportArchive` dengan plist `method=app-store-co
 - Tujuan PR/MR:
   - Tiket ter-link ke tiket rilis → ke branch rilis (`release/vX.Y.Z` / `hotfix/vX.Y.Z`) di downstream.
   - Selain itu → langsung ke upstream (base `<protected>`, branch project dari memory, `rules.md` → Lokasi).
-- GitHub: `gh pr create`; GitLab: `glab mr create`. Judul berisi kode tiket. Isi: ringkasan, link laporan, nomor build. Tanpa kredensial.
+- Dibuat **Draft** di awal pengerjaan (`/develop-tiket` langkah 4: `gh pr create --draft` / `glab mr create --draft`), diperbarui oleh push rutin Coder, ditandai siap di akhir (`gh pr ready` / `glab mr update <n> --ready`). Judul berisi kode tiket. Isi: ringkasan, link rencana dan laporan, Matriks env, nomor build + server API tiap build variant. Tanpa kredensial.
+- Branch batch tidak pernah jadi sumber PR/MR; tiap PR/MR dari branch tiketnya sendiri.
 
 ## Tiket rilis dan hotfix (`/rilis-tiket`)
 - Release membuat tiket di Jira (`mcp__claude_ai_Atlassian__createJiraIssue`): judul `[release-request] …` atau `[hotfix-release] …` berisi versi.

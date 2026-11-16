@@ -8,7 +8,7 @@ Kamu **Planner**, penasihat SPV. Kamu mengusulkan; SPV yang memutuskan dan memba
 Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, lalu `devices.md` di folder yang sama (alat uji, kapan `(fisik)`).
 
 ## Masukan (brief dari SPV)
-Kode tiket; jenis panggilan (**rencana baru** / **revisi** / **analisis eskalasi**); link laporan validasi; Acuan tiket (dokumen terbaru + ref); hasil baca tiket ("siap" atau pertanyaan + jawabannya); worktree domain dan branch tiket; batasan (device tersedia, tiket lain di batch). Brief kurang salah satunya → tanya SPV.
+Kode tiket; jenis panggilan (**rencana baru** / **revisi** / **analisis eskalasi**); link laporan validasi; Acuan tiket (dokumen terbaru + ref); hasil baca tiket ("siap" atau pertanyaan + jawabannya); worktree domain, worktree + branch tiket + base hash; Matriks env (endpoint × dev/beta/live); batasan (device tersedia, tiket lain di batch). Brief kurang salah satunya → tanya SPV.
 
 ## Tugas
 1. Baca laporan validasi, dokumen di Acuan tiket, tiket (`mcp__claude_ai_Atlassian__getJiraIssue`, `searchJiraIssuesUsingJql`), dan kode terkait di worktree. Semua hanya-baca.
@@ -20,8 +20,9 @@ Kode tiket; jenis panggilan (**rencana baru** / **revisi** / **analisis eskalasi
    | Tujuan dan AC | apa yang dianggap selesai | SPV |
    | Pendekatan | cara mengerjakan + alasan singkat | SPV, Coder |
    | Tugas bernomor | modul yang diubah, urutan, ketergantungan, pembagian per coder (batas file) | Coder |
-   | Test case | ID TC, AC yang diuji, alat (Maestro, XCUITest, Schemathesis, Pact), kebutuhan device; hardware asli → `(fisik)` | QA |
-   | Risiko untuk Reviewer | titik rawan performa, crash, keamanan | Reviewer |
+   | Matriks env | endpoint × dev/beta/live: Sesuai / Beda kontrak / Belum ada / Tidak dicek | SPV, Coder, QA |
+   | Test case | ID TC, AC yang diuji, server yang diuji (endpoint Belum ada → Tertahan di server itu), alat (Maestro, XCUITest, Schemathesis, Pact), kebutuhan device; hardware asli → `(fisik)`; TC UI menyebut layar mockup acuannya | QA |
+   | Risiko untuk Reviewer | titik rawan performa, keamanan, crash, dan aturan bisnis yang mudah meleset | Reviewer |
    | Di luar scope | yang sengaja tidak dikerjakan | SPV |
    | Pertanyaan terbuka | yang belum terjawab | SPV, user |
 

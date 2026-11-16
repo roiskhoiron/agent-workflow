@@ -5,15 +5,15 @@
 | SPV | Pak Darmo | opus | bagi tugas, jatah device, putuskan selesai, publikasi laporan | menulis kode produk |
 | Planner | Pak Sastro | `claude-fable-5-2` (Fable 5.2) | rencana kerja + test case tiket mode tim, analisis saat pengerjaan macet; hanya atas panggilan SPV | kode produk, Jira, device, memerintah agen lain |
 | Validator | Kang Jajang | opus | `/validate-tiket`; mode tim = SPV validasi | menulis kode produk |
-| Coder | Maman, Ujang, Tarjo, Asep, Parmin | sonnet | kode + tes (TDD) di branch tiket; tugas UI: tanya mockup ke SPV dulu, tambahkan micro-interaction + animasi sederhana | Jira, push, upload |
-| Reviewer | Mbah Karto | opus | review performa & risiko crash | review kode sendiri |
-| QA | Paijo, Euis, Ningsih | sonnet | uji di device (Maestro, XCUITest), API (Schemathesis), kontrak (Pact) | Jira, push, upload |
-| Release | Sutini | haiku | nomor build, build + upload, push, PR/MR, komentar & geser tiket | Done, upload prod tanpa izin |
+| Coder | Maman, Ujang, Tarjo, Asep, Parmin | sonnet | kode + tes (TDD) di branch tiket; tugas UI: tanya mockup ke SPV dulu, tambahkan micro-interaction + animasi sederhana; cek silang kontrak + desain ke SPV; push rutin branch tiketnya | Jira, push selain branch tiketnya, force-push, upload |
+| Reviewer | Mbah Karto | opus | review performa + keamanan, lalu logika vs aturan bisnis/AC; tulis review di PR/MR | review kode sendiri |
+| QA | Paijo, Euis, Ningsih | sonnet | uji di device (Maestro, XCUITest) dibandingkan mockup, API (Schemathesis), kontrak (Pact), per server dev/beta/live | Jira, push, upload |
+| Release | Sutini | haiku | Draft PR/MR di awal, nomor build, build + upload (catatan rilis menyebut server API), PR/MR siap review, komentar & geser tiket | Done, upload prod tanpa izin |
 | Auditor | Cecep, Dadang, Sarip | opus | `/audit-issue`: kode, log, reproduksi | menulis repo/Jira |
 | Analis | Bu Lastri | opus | `/audit-issue`: lampiran | menulis repo/Jira |
 | PdM | Bu Ratmi | sonnet | `/validate-tiket --tim`: dokumen business discovery | menulis repo/Jira/Docs |
 | Product Designer | Neng Lilis | sonnet (eskalasi opus) | `/validate-tiket --tim`: mockup, state layar, reproduksi bug UI | menulis repo/Jira/Docs |
-| Contract Runner | Kang Ohim | sonnet | `/validate-tiket --tim`: Schemathesis + Pact endpoint tiket | uji ke prod, menulis repo/Jira/Docs |
+| Contract Runner | Kang Ohim | sonnet | `/validate-tiket --tim`: Schemathesis + Pact endpoint tiket; `/develop-tiket`: Matriks env dev/beta/live | fuzzing/menulis data ke beta/live, menulis repo/Jira/Docs |
 | HoE | Pak Harjo | opus | `/validate-tiket --tim`: codebase vs blueprint, kontrak API, bug logika | menulis repo/Jira/Docs |
 | Spesialis eskalasi | Eyang Wiryo | `claude-fable-5-2` (Fable 5.2), on-demand | `/validate-tiket --tim`: hanya saat pemicu eskalasi | menulis repo/Jira/Docs |
 | PjM | Bu Sumi | sonnet | `/validate-tiket --tim`: tiket terkait, PR/MR terbuka, risiko bentrok | menulis Jira/PR/Docs |

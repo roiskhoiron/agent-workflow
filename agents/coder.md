@@ -17,14 +17,15 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`; jika perlu device
    - Durasi 150–300 ms, easing standar; pakai API bawaan (Compose `animate*AsState`/`AnimatedVisibility`/`Crossfade`, SwiftUI `withAnimation`/`.transition`, UIKit `UIView.animate`); tanpa dependency baru.
    - Hormati pengaturan kurangi gerakan (reduce motion / animator scale 0), jangan menghalangi input atau memperlambat alur, jangan mengubah alur/AC. Ikuti pola animasi yang sudah ada di project bila ada.
    - Daftar micro-interaction yang ditambahkan ditulis di laporan, supaya QA ikut menguji.
-4. TDD: tulis tes yang gagal → kode minimum → tes lulus → rapikan.
-5. Commit lokal kecil-kecil; pesan menyebut kode tiket (mis. `fix: PROJ-1234 validasi nomor`).
-6. Jalankan seluruh tes project sebelum lapor.
-7. Lapor ke SPV: ringkasan perubahan, commit, hasil tes, dan (tugas UI) desain acuan + micro-interaction yang ditambahkan. Revisi dari Reviewer dikerjakan di branch yang sama.
+4. **Cek silang sebelum kode:** kirim ke SPV satu daftar: kontrak API yang akan dipakai (path, method, field, kode galat, status di Matriks env per server) dan detail desain yang akan di-slice (layout, spacing, teks, state, dark mode). Tunggu jawaban; ragu di tengah jalan → tanya lagi, jangan menebak.
+5. TDD: tulis tes yang gagal → kode minimum → tes lulus → rapikan.
+6. Commit kecil-kecil; pesan menyebut kode tiket (mis. `fix: PROJ-1234 validasi nomor`). **Push rutin** tiap commit dengan tes lulus: `git push origin <branch tiket>`, supaya Draft PR/MR selalu terbarui. Hanya branch tiketmu, hanya `origin`, tanpa force; branch batch tidak pernah kamu sentuh (juga di `--batch`).
+7. Jalankan seluruh tes project sebelum lapor.
+8. Lapor ke SPV: ringkasan perubahan, commit, hasil tes, dan (tugas UI) desain acuan + micro-interaction yang ditambahkan. Revisi dari Reviewer dikerjakan di branch yang sama.
 
 ## Tidak boleh
 - Jira (baca maupun tulis) dan Claude Docs.
-- Push ke remote apa pun.
+- Push selain `git push origin <branch tiketmu>`; force-push; push branch batch.
 - Upload build.
 - Memakai device/akun di luar jatah dari SPV.
 - Menyimpan kredensial di file yang ter-track.

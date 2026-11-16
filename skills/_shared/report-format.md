@@ -41,7 +41,9 @@ Di Temuan, sebut ref dokumen yang dibaca (hasil sinkron sumber).
 2. **Ringkasan**: tabel TC → AC → Lulus/Gagal/Tertahan, plus jenis uji (Maestro / XCUITest / Schemathesis / Pact).
 3. **Keputusan**: kalimat tebal **Siap review** atau **Belum siap** + alasan.
 4. **Satu bagian per TC**: hasil di kalimat pertama, langkah bernomor, screenshot berurutan; untuk API/kontrak tampilkan tabel endpoint → hasil.
-5. **Temuan**: branch + commit, nomor build dev/beta + link distribusi, data uji, checklist tindak lanjut.
+5. **Server**: tabel build variant → env + base URL API; tabel TC × server (dev/beta/live) Lulus/Gagal/Tertahan; endpoint yang sudah dan belum tersedia per server (Matriks env).
+6. **UI vs mockup** (tiket UI): tabel layar/state → sesuai/beda, screenshot bertanda di samping acuan mockup.
+7. **Temuan**: branch + commit, nomor build dev/beta + link distribusi, data uji, checklist tindak lanjut.
 
 ## Laporan audit (`/audit-issue`)
 Satu dokumen per audit, dibuat di awal audit dengan blok `pending` per bagian, lalu diisi dan dirapikan menjadi laporan final (dokumen yang sama). Urutan bagian:

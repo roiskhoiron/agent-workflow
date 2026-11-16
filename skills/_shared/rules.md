@@ -10,6 +10,7 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
 - State lokal (bukan di repo): `${AGENT_WORKFLOW_STATE:-$HOME/.agent-workflow}/` — daftar transisi Jira (kunci device ada di `~/.agent-workflow/locks`).
 - **Lokasi khusus project tidak pernah ditulis di konfigurasi global** (agen, skill, rules, guard, CLAUDE.md global): folder/repo dokumen business discovery, desain/mockup, kontrak API, blueprint, remote yang di-pull, folder project. Agen membaca memory project Claude Code (`MEMORY.md` project) dan `## Catatan agen` di `CLAUDE.md` project. Belum ada → tanya user sekali (path + fungsinya), simpan sebagai memory project tipe `reference`, lalu pakai. Path berubah/tidak ditemukan → perbarui memory itu setelah bertanya.
 - **Branch project** (per repo, juga dari memory project): `<primary>` = branch produksi/live (sumber hotfix, tujuan MR rilis), `<protected>` = branch terlindungi untuk integrasi (sumber dan tujuan feature request/fix). Belum ada di memory → kumpulkan saran (`git remote -v`, `git ls-remote --symref upstream HEAD`, `git branch -r`), tanya user sekali, simpan sebagai memory project tipe `reference` (remote fork/utama ikut dicatat bila bukan `origin`/`upstream`). Nama `master`/`develop` di dokumen workflow hanya contoh, bukan aturan.
+- **Server API per env** (juga dari memory project): base URL dev/beta/live dan pemetaan build variant (flavor/scheme) → env. Belum ada → kumpulkan saran dari konfigurasi build project, tanya user sekali, simpan sebagai memory project tipe `reference`. Kredensial tidak pernah disimpan di sini.
 
 ## Tim dan model
 | Agen | Model (Orca `--model`) | Tugas | Tidak boleh |
@@ -19,18 +20,18 @@ Berlaku untuk semua agen dan skill (`/validate-tiket`, `/develop-tiket`, `/rilis
 | Validator | opus (`claude-opus-5-5`) | /validate-tiket; mode tim = SPV validasi | kode produk |
 | PdM | sonnet (`claude-sonnet-5-5`) | /validate-tiket tim: dokumen business discovery | menulis repo/Jira/Docs, device |
 | Product Designer | sonnet (`claude-sonnet-5-5`), eskalasi opus (`claude-opus-5-5`) | /validate-tiket tim: desain/mockup, reproduksi bug UI | menulis repo/Jira/Docs |
-| Contract Runner | sonnet (`claude-sonnet-5-5`) | /validate-tiket tim: Schemathesis + Pact endpoint tiket, diff kontrak | uji ke prod, menulis repo/Jira/Docs |
+| Contract Runner | sonnet (`claude-sonnet-5-5`) | /validate-tiket tim: Schemathesis + Pact endpoint tiket, diff kontrak; /develop-tiket: Matriks env (dev/beta/live) | fuzzing/menulis data ke beta/live, menulis repo/Jira/Docs |
 | HoE | opus (`claude-opus-5-5`) | /validate-tiket tim: codebase vs blueprint, kontrak API, bug logika/API | menulis repo/Jira/Docs |
 | Spesialis eskalasi | fable (`claude-fable-5-2`), on-demand | /validate-tiket tim: hanya saat pemicu eskalasi | menulis repo/Jira/Docs, memutuskan |
 | PjM | sonnet (`claude-sonnet-5-5`) | /validate-tiket tim: tiket terkait/blocking, PR/MR terbuka, risiko bentrok | menulis Jira/PR/Docs, device |
-| Reviewer | opus (`claude-opus-5-5`) | performa & crash sebelum PR | review kode sendiri |
-| Release | haiku (`claude-haiku-5-5`) | nomor build, build+upload, PR/MR, komentar & geser tiket | Done, upload prod tanpa izin |
-| Coder | sonnet (`claude-sonnet-5-5`) | TDD di branch sendiri | Jira, push, upload, device di luar jatah |
+| Reviewer | opus (`claude-opus-5-5`) | performa & keamanan, lalu logika vs AC; review ditulis di PR/MR | review kode sendiri |
+| Release | haiku (`claude-haiku-5-5`) | Draft PR/MR, nomor build, build+upload, PR/MR siap review, komentar & geser tiket | Done, upload prod tanpa izin |
+| Coder | sonnet (`claude-sonnet-5-5`) | TDD di branch sendiri, push rutin branch tiketnya ke `origin` | Jira, push selain branch tiketnya, force-push, upload, device di luar jatah |
 | QA | sonnet (`claude-sonnet-5-5`) | Maestro, XCUITest, Schemathesis, Pact di device | Jira, push, upload, device di luar jatah |
 | Auditor | opus (`claude-opus-5-5`) | /audit-issue: kode, log, reproduksi | menulis repo/Jira |
 | Analis | opus (`claude-opus-5-5`) | /audit-issue: lampiran | menulis repo/Jira |
 
-Management (SPV, Planner, Validator, Reviewer, Release) memutuskan dan berbicara ke luar: Jira, Claude Docs, git remote, Firebase/TestFlight. Development (Coder, QA) hanya kode dan device. Planner hanya penasihat SPV: menulis dokumen rencana di Claude Docs, tidak berbicara ke agen lain atau ke luar. Tim validasi (PdM, Product Designer, Contract Runner, HoE, Spesialis eskalasi, PjM) hanya-baca dan melapor ke Validator (SPV validasi), yang menulis laporan, komentar Jira, dan transisi. Housekeeping = skrip shell, tanpa agen. Model diubah di `~/.claude/agents/<peran>.md`.
+Management (SPV, Planner, Validator, Reviewer, Release) memutuskan dan berbicara ke luar: Jira, Claude Docs, git remote, Firebase/TestFlight. Development (Coder, QA) hanya kode dan device; satu-satunya akses remote Coder = push branch tiketnya sendiri ke `origin`. Planner hanya penasihat SPV: menulis dokumen rencana di Claude Docs, tidak berbicara ke agen lain atau ke luar. Tim validasi (PdM, Product Designer, Contract Runner, HoE, Spesialis eskalasi, PjM) hanya-baca dan melapor ke Validator (SPV validasi), yang menulis laporan, komentar Jira, dan transisi. Housekeeping = skrip shell, tanpa agen. Model diubah di `~/.claude/agents/<peran>.md`.
 
 ## Mode kerja
 - **Diawasi**: sesi biasa, user menyetujui izin.
@@ -89,7 +90,12 @@ Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace 
 Orkestrasi (SPV sebagai lead): tiap worker = **teammate** Claude Code (agent teams). Orca menampilkannya sebagai panel split di tab SPV dengan label `@<nama>` tepat di atas kolom input; tidak ada panel atau tab yang dibuka sendiri.
 - **Syarat:** sesi SPV jalan dengan teammate mode: `claude --teammate-mode auto`, atau sekali di `/config` → Teammate mode = auto. Tool Agent tanpa parameter `name` = mode itu mati → tanya user: buka ulang sesi dengan teammate mode (saran), atau lanjut solo.
 - **Panggil:** tool Agent dengan `name: "<Nama>-<Label><n>"` (mis. `Paijo-QA1`, tabel di bawah), `subagent_type: <peran>` (`planner`, `coder`, `reviewer`, `qa`, `release`, `auditor`, `analis`, `pdm`, `product-designer`, `contract-runner`, `hoe`, `eskalasi`, `pjm`) dan `model` sesuai peran (Planner dan Spesialis eskalasi: jangan isi `model`, alias `fable` menimpa ID `claude-fable-5-2` di frontmatter). Prompt: "Ikuti `~/.claude/agents/<peran>.md`" + tugas (kode tiket, worktree, batas file, jatah device/akun, folder laporan).
-- **Lapor & tanya:** teammate mengirim hasil dan pertanyaan ke SPV lewat SendMessage; pesan datang sendiri, tidak perlu dipantau. Pakai daftar tugas bersama tim untuk melacak tugas per tiket.
+- **Lapor & tanya:** teammate mengirim hasil dan pertanyaan ke SPV lewat SendMessage. Pakai daftar tugas bersama tim untuk melacak tugas per tiket (pemilik, status, hasil yang ditunggu).
+- **Pantau sampai tuntas (wajib, SPV):** sejak teammate pertama dipanggil, SPV aktif memantau semua teammate sampai tugasnya berakhir; tidak menunggu diam tanpa batas.
+  - Tunggu dalam rentang terbatas (±10 menit); tiap rentang cocokkan daftar agen/tugas tim dengan yang sedang berjalan, dan tulis satu baris status ke user.
+  - Teammate diam lebih dari satu rentang → SendMessage minta status. Tetap diam → cek jejaknya sendiri (commit/push di branch tiketnya, file laporan, kunci device/build yang dipegang); macet atau mati → lepas kuncinya, hentikan, lalu tugaskan ulang ke nama berikutnya dengan konteks posisi terakhir.
+  - Tugas dianggap selesai hanya bila hasilnya terbukti ada (commit ter-push, komentar review di PR/MR, `report.md`, link build/PR), bukan sekadar pesan "selesai".
+  - Hasil terbukti → hentikan teammate itu saat itu juga (panel/terminalnya tertutup). Sebelum ringkasan akhir: pastikan tidak ada teammate batch ini yang masih hidup dan tidak ada kunci tersisa.
 - **Pakai ulang:** tugas lanjutan untuk agen yang sama (revisi dari Reviewer, tiket berikutnya untuk peran itu) → SendMessage ke nama yang sama, jangan panggil nama itu lagi; tugas tiket lain → minta dia mulai bersih dulu. Tidak pernah ada dua `Maman-Programmer1`. Pekerjaan paralel → nama berikutnya.
 - **Hentikan:** peran yang tidak punya tugas lagi di batch ini (Coder setelah lolos review dan, di `--batch`, di-merge ke branch batch; Reviewer setelah review terakhir; QA setelah laporannya diterima) → minta teammate itu berhenti (shutdown) saat itu juga; panelnya tertutup sendiri. Akhir batch atau berhenti lebih awal → hentikan semua teammate batch ini.
 - Mode izin teammate mengikuti sesi SPV.
