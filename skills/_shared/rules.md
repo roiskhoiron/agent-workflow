@@ -51,7 +51,7 @@ Jangan mencari jalan memutar. Jika diblokir, laporkan pesannya ke SPV/user.
 
 ## Selalu berhenti dan tanya
 1. Upload ke prod.
-2. Sebelum memulai hotfix (sementara manual) dan sebelum merge PR rilis (hanya manusia).
+2. Sebelum memulai hotfix (sementara manual).
 3. Nomor build tidak jelas (`build-number.sh` keluar dengan kode 3).
 4. Kredensial tidak ditemukan.
 5. Dua fix hotfix bentrok (mode tim: SPV minta analisis opsi dari Planner dulu, lalu tanya).
