@@ -10,7 +10,7 @@ Agen memanggilnya sebagai `$AGENT_WORKFLOW_DIR/bin/<skrip>`. Kamu juga boleh men
 | `ios-ui.sh` | Jalankan langkah uji iOS lewat XCUITest runner (lihat bawah) | `bin/ios-ui.sh <udid> steps.json out/` |
 | `annotate.py` | Gambar kotak merah + label di screenshot dari koordinat | `uv run --with pillow python3 bin/annotate.py in.png boxes.json out.png` |
 | `build-number.sh` | Tentukan nomor build; exit 3 = sumber tidak sepakat, agen bertanya | `bin/build-number.sh next asc=41 firebase=41 tag=40` |
-| `manifest-check.sh` | Bandingkan tiket di commit branch rilis dengan manifest | `bin/manifest-check.sh origin/master origin/release/v1.2.0 PROJ-1 PROJ-2` |
+| `manifest-check.sh` | Bandingkan tiket di commit sebuah branch dengan daftar tiket (alat bantu, bukan bagian alur rilis) | `bin/manifest-check.sh origin/master origin/<branch> PROJ-1 PROJ-2` |
 | `release-trace.sh` | Lacak tiap commit `primary..protected` ke PR dan tiket Jira (TSV); exit 1 = ada commit tanpa kode, 3 = primary belum terkandung di protected | `bin/release-trace.sh upstream/master upstream/develop PROJ` |
 | `build-preempt.sh` | `reap`: lepas `build:heavy` yang lupa dilepas (tidak ada build 20 menit; housekeeping menjalankannya tiap jam). Saat `build:heavy` dipakai tiket lain: `info` (siapa, berapa lama, sedang upload?), `take` (hentikan build itu dan ambil kunci, setelah kamu setuju), `check` (agen yang dihentikan tahu harus build ulang) | `bin/build-preempt.sh info` |
 | `device-preempt.sh` | Ambil alih device yang dikunci agen lain, hanya setelah kamu setuju: `info` (siapa, berapa lama, sedang diuji?), `take` (hentikan proses uji di device itu, tulis catatan untuk pemegang lama, pindahkan kunci) | `bin/device-preempt.sh info android:<serial>` |
