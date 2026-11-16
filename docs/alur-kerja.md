@@ -6,7 +6,7 @@ Setiap tiket bergerak dari kiri ke kanan. Satu kolom = satu status tiket.
 | | To Do | In Progress | Ready To Review | Done |
 | --- | --- | --- | --- | --- |
 | **Artinya** | Tiket baru, belum dicek | Layak dan sedang dikerjakan | Kode + uji selesai, menunggu review manusia | Diterima dan selesai |
-| **Perintah di kolom ini** | `/validate-tiket` | `/develop-tiket` | `/rilis-tiket` (kumpulkan ke rilis) | — |
+| **Perintah di kolom ini** | `/validate-tiket` | `/develop-tiket` | `/rilis-tiket` (feedback QA) | `/rilis-tiket` (merge PR tiket), `/branch-manager --rilis` (rilis versi) |
 | **Pindah oleh** | — | agen (Validator), bila **Layak** | agen (Release), bila semua TC Lulus/Tertahan beralasan | **manusia saja** |
 | **Bukti yang ditinggalkan** | — | laporan validasi + komentar Jira | rencana, laporan uji, build dev, PR/MR, komentar Jira | — |
 
@@ -15,13 +15,16 @@ flowchart LR
   A[To Do] -->|/validate-tiket: Layak| B[In Progress]
   A -->|Tidak layak: tetap di To Do + komentar alasan| A
   B -->|/develop-tiket| C[Ready To Review]
-  C -->|review manusia| E[Done]
-  C -.->|/rilis-tiket: masuk branch rilis, MR upstream, tag vX.Y.Z| E
+  C -->|QA terima: manusia| E[Done]
+  C -->|/rilis-tiket: ditolak QA, izin user| A
+  C -->|/rilis-tiket: minta build Beta/Prod| C
+  E -->|/rilis-tiket: audit + merge PR tiket ke protected| P[protected]
+  P -->|/branch-manager --rilis: PR rilis, build live, tag vX.Y.Z| M[primary]
 ```
 
 - Agen **tidak pernah** memindah tiket ke Done; guard memblokirnya karena Done tidak ada di `jira-transitions.json`.
-- Agen hanya boleh memakai dua transisi: **In Progress** dan **Ready To Review**. ID-nya dipilih kamu sekali per project.
-- Tiket yang gagal review manusia dikembalikan ke In Progress oleh manusia, lalu `/develop-tiket` dijalankan lagi.
+- Agen hanya boleh memakai transisi **In Progress**, **Ready To Review**, dan **Todo** (Todo hanya lewat `/rilis-tiket` dengan izin per tiket). ID-nya dipilih kamu sekali per project.
+- Tiket yang ditolak QA kembali ke Todo; `/validate-tiket` lalu memvalidasi ulang (apa yang ditolak), dan `/develop-tiket` melanjutkan di branch dan PR/MR yang sama.
 
 ## `/validate-tiket`
 1. Baca tiket, komentar, dan link terkait; catat AC dan versi.
@@ -94,11 +97,24 @@ flowchart TD
 - Dengan `--uat`, device fisik dipindah ke kamu (kunci `human-<KODE>`); crash selama UAT mengembalikan tiket ke Coder. Pemantauan log gagal → SPV memberi tahu, dan hasil UAT mengikuti laporanmu.
 
 ## `/rilis-tiket`
-1. Baca tiket rilis (`[release-request]` / `[hotfix-release]`) dan manifest tiketnya.
-2. Cek kondisi repo (branch, tag, versi live), lalu **selalu tanya** sebelum membuat `release/vX.Y.Z` atau `hotfix/vX.Y.Z` di downstream.
-3. MR per tiket ke branch itu, `manifest-check.sh` memastikan isi branch = manifest.
-4. Build beta (nomor build dari `build-number.sh`; ragu → tanya), satu MR ke upstream, komentar tiket rilis.
-5. Setelah MR upstream di-merge: tag `vX.Y.Z` di-push ke `upstream` dan `origin`.
+Per tiket (Ready To Review atau Done). Agen membaca **feedback QA terakhir** (komentar manusia terbaru di Jira + PR/MR) lalu:
+
+| Keadaan | Tindakan |
+| --- | --- |
+| Ditolak QA | Ringkas arahan QA, minta izin, tiket ke **Todo** + komentar |
+| QA minta build Beta/Prod | Sinkron dokumen, cek ulang Matriks env di server tujuan, build variant itu (Prod: izin eksplisit) |
+| Done + punya PR/MR | Audit (approved, CI hijau, diff sesuai, Matriks env live), lalu merge PR tiket ke `<protected>` setelah "ya" |
+| Tanpa feedback | Lapor saja |
+
+Tiket yang pernah dikeluarkan dari rilis: PR **revert dari revert** dulu, baru PR tiket.
+
+## `/branch-manager`
+`/branch-manager --rilis KODE` = rilis **per versi** (`KODE` = tiket rilis tempat laporan dikomentari). Agen bekerja dulu, lalu bertanya: **Konfirmasi / Tolak / Ikuti rekomendasi agen**.
+1. `git fetch`, lalu `release-trace.sh` melacak tiap commit `<primary>..<protected>` ke PR/MR, tiket, dan programmer. Hotfix belum di-back-merge → berhenti dan tanya.
+2. Cek semua tiket Done dan Matriks env live; yang belum → rekomendasi.
+3. Laporan Claude Docs `Perubahan rilis vX.Y.Z` + komentar di tiket rilis + PR rilis `<protected>` → `<primary>` (merge commit, bukan squash).
+4. Keluarkan tiket X → agen membuat PR revert, lalu tracing diulang.
+5. Setelah konfirmasi: build live (`.aab` + TestFlight; upload produksi butuh izin), PR rilis **di-merge manusia**, lalu tag `vX.Y.Z` di-push ke `upstream` dan `origin`.
 
 ## `/audit-issue`
 1. Langsung membuat dokumen laporan di Claude Docs, lalu memecah keluhan jadi pertanyaan.

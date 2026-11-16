@@ -6,7 +6,7 @@ Status: **v1 terpasang**, siap uji coba di tiket nyata.
 
 ## Daftar isi
 1. [Mulai cepat](#mulai-cepat) dan [istilah penting](#istilah-penting) (di halaman ini)
-2. [Alur kerja + papan kanban](docs/alur-kerja.md): `/validate-tiket`, `/develop-tiket` (semua flag), `/rilis-tiket`, `/audit-issue`
+2. [Alur kerja + papan kanban](docs/alur-kerja.md): `/validate-tiket`, `/develop-tiket` (semua flag), `/rilis-tiket`, `/branch-manager`, `/audit-issue`
 3. [Tim agen](docs/tim-agen.md): peran, nama, model
 4. [Pagar keamanan](docs/pagar-keamanan.md): yang diblokir guard, kapan agen berhenti dan bertanya
 5. [Alat (tools) + MCP](docs/alat.md): skrip `bin/`, alat device, skill pendukung, MCP, pembersihan otomatis
@@ -22,7 +22,8 @@ Ketik perintah ini di Claude Code, di dalam terminal Orca:
 | --- | --- | --- |
 | `/validate-tiket KODE... [--solo\|--tim]` | Cek tiket layak dikerjakan; bug direproduksi di device. `--tim`: dibagi ke PdM, Product Designer, Contract Runner, HoE, PjM (+ Spesialis eskalasi). Hasil: laporan bergambar + komentar Jira | mana saja |
 | `/develop-tiket KODE... [--solo\|--tim] [--batch\|--separate] [--uat]` | Rencana, kode (TDD), review, uji di device, build, PR/MR, komentar Jira, tiket ke Ready To Review | workspace domain |
-| `/rilis-tiket KODE-RILIS` atau `/rilis-tiket baru release\|hotfix` | Kumpulkan tiket ke branch rilis/hotfix, cek manifest, build beta, satu MR ke upstream | root project atau domain |
+| `/rilis-tiket KODE...` | Tindak lanjut feedback QA per tiket: kembalikan ke Todo, build variant lain (Beta/Prod), atau audit + merge PR tiket | root project atau domain |
+| `/branch-manager --rilis KODE` | Rilis per versi: tracing perubahan ke tiket/PR/programmer, laporan Claude Docs, PR rilis, build live, tag setelah PR rilis di-merge manusia | root project atau domain |
 | `/audit-issue "teks" [--solo\|--tim] [lampiran...]` | Telusuri keluhan yang belum jadi tiket, **hanya-baca**. Hasil: laporan + saran tiket | mana saja |
 
 Contoh:
@@ -31,6 +32,8 @@ Contoh:
 /develop-tiket PROJ-1234 PROJ-1240 --tim
 /develop-tiket PROJ-1300 --solo --separate
 /audit-issue "chat tidak muncul notifikasi di iOS 18" --solo
+/rilis-tiket PROJ-1234
+/branch-manager --rilis PROJ-1400
 ```
 
 Semua flag dan alur tiap perintah: [docs/alur-kerja.md](docs/alur-kerja.md).
@@ -53,7 +56,7 @@ Semua flag dan alur tiap perintah: [docs/alur-kerja.md](docs/alur-kerja.md).
 
 | Folder | Isi |
 | --- | --- |
-| `skills/<perintah>/SKILL.md` | Langkah tiap perintah (`/validate-tiket`, `/develop-tiket`, `/rilis-tiket`, `/audit-issue`) |
+| `skills/<perintah>/SKILL.md` | Langkah tiap perintah (`/validate-tiket`, `/develop-tiket`, `/rilis-tiket`, `/branch-manager`, `/audit-issue`) |
 | `skills/_shared/` | Aturan bersama: `rules.md` (tim, guard, git, worktree), `devices.md` (device & alat), `build-release.md`, `credentials.md`, `report-format.md` |
 | `agents/` | Peran agen (model, tugas, larangan) |
 | `bin/` | Skrip pembantu (tabel di [docs/alat.md](docs/alat.md)) |
