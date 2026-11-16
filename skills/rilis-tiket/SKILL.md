@@ -25,6 +25,7 @@ flowchart LR
    | Ditolak QA | 3a |
    | Positif, belum Done, QA minta build variant lain (Beta/Prod) | 3b |
    | Done + punya PR/MR | 3c |
+   | Positif tanpa permintaan build (belum Done) | Lapor saja, tanpa tindakan |
    | Tidak ada feedback QA | Lapor, tidak ada tindakan |
 
    Beberapa keadaan sekaligus → urutan **Done > ditolak > minta build**. Feedback saling bertentangan → tanya user, jangan menebak.
@@ -33,11 +34,11 @@ flowchart LR
    - **3b Minta build:**
      1. **Sinkron dokumen** sama persis dengan `/validate-tiket` langkah 1 (kontrak API, blueprint, mockup; catat ref).
      2. **Cek ulang Matriks env** untuk server tujuan (method aman saja, seperti `/develop-tiket` langkah 3; tanpa fuzzing, tanpa menulis data). Endpoint **Belum ada** / **Beda kontrak** di server tujuan → berhenti dan tanya.
-     3. Pastikan isi tiket ada di build itu (branch/PR tiket; tidak ada → tanya). Build variant yang diminta dari worktree tiket yang ada (`build-release.md`: nomor build, upload; antre `build:heavy`). **Prod: izin eksplisit** dulu.
+     3. Pastikan isi tiket ada di build itu (branch/PR tiket; tidak ada → tanya). Build variant yang diminta di worktree tiket `<repo>-<nomor>` (sejajar checkout domain). Sudah dihapus → buat ulang seperti `/develop-tiket` (`rules.md` → Workspace & worktree), branch dari `origin/<branch tiket>` setelah `git fetch origin`; build (`build-release.md`: nomor build, upload; antre `build:heavy`); hapus lagi setelah build bila `git status --porcelain` kosong dan sudah di-push (tanpa `--force`). **Prod: izin eksplisit** dulu.
      4. Catatan rilis dan komentar Jira (baris pertama link laporan/build) menyebut **nama server + base URL API** build itu, tanpa kredensial.
    - **3c Done:** audit sesuai tabel `build-release.md` → Merge PR tiket (approved, CI hijau, diff sesuai tiket, Matriks env live **Sesuai kontrak**).
-     - Tiket pernah dikeluarkan dari rilis (ada PR revert `revert/<KODE>` yang ter-merge) → buat PR **revert dari revert** dulu (aturan di `build-release.md` → Rilis) dan merge setelah "ya"; baru PR tiket.
-     - Lolos → minta "ya" user, lalu merge: `gh pr merge <n> --repo <upstream> --squash|--merge` / `glab mr merge <n>`, strategi dari memory. Gagal satu syarat → lapor + saran, tidak merge. Komentar Jira (link PR + commit merge).
+     - Cek PR revert: `gh pr list --repo <upstream> --state merged --search "revert: <KODE>"` / `glab mr list --merged --search "revert: <KODE>"`. Ada (tiket pernah dikeluarkan dari rilis) → buat PR **revert dari revert** dulu (aturan di `build-release.md` → Rilis) dan merge setelah "ya"; baru PR tiket.
+     - Lolos → minta "ya" user, lalu merge: `gh pr merge <n> --repo <upstream> --squash|--merge` / `glab mr merge <n>`, strategi dari memory; belum tercatat → tanya, jangan menebak. Gagal satu syarat → lapor + saran, tidak merge. Komentar Jira (link PR + commit merge).
 4. **Ringkasan** ke user:
    | KODE | Feedback | Tindakan | Build/PR | Status |
    |---|---|---|---|---|
