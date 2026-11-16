@@ -35,7 +35,7 @@ flowchart LR
    |---|---|
    | **Implementasi meleset** (requirement tetap) | Keputusan **Layak**; daftar revisi masuk "Yang ditolak" |
    | **Requirement berubah/kurang** | Cek ulang bisnis/mockup/kontrak terhadap dokumen terbaru; tidak jelas → tanya user/PM; keputusan memakai tabel "Aturan keputusan" |
-   Tidak ada jejak → validasi biasa.
+   Jejak ada tapi tidak ada komentar penolakan (mis. tiket dipindah ke Todo manual) → tanya user apa yang ditolak. PR/MR tiket sudah **merged** → tidak dipakai ulang: pengerjaan lewat branch baru `<jenis>/<KODE>-r<n>` dari base terkini + Draft PR/MR baru yang menyebut yang lama. Tidak ada jejak → validasi biasa.
 4. **Bug:** tentukan versi dari tiket (kosong → build dev/beta terbaru, lihat `build-release.md`). Ambil device (`device-pick.sh`: virtual dulu; `--physical` bila butuh hardware asli, lihat `devices.md`), reproduksi via Maestro (cadangan per platform di `devices.md`); screenshot tiap langkah.
    **Fitur:** cek requirement lengkap, API siap (spec di repo), desain tersedia.
    **Tiket terkait (solo dan tim):** selain link yang ada, cari tiket Todo/In Progress yang tidak di-link tapi menyentuh komponen/label/layar/fitur/endpoint yang sama (JQL `text ~`); mode tim dikerjakan PjM. Link antar tiket tidak dibuat sendiri: cukup disarankan di komentar.
