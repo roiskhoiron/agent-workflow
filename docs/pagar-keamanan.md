@@ -6,9 +6,12 @@
 - Memindah tiket ke status di luar `~/.agent-workflow/jira-transitions.json` (Done tidak pernah ada di sana).
 - Edit file di worktree primary; membuka tab/workspace/project Orca baru; worktree di luar folder project.
 - Uninstall, `pm clear`, dan install app hanya di device yang dikunci agen itu sendiri (atau tidak dikunci siapa pun); agen yang device-nya diambil alih diblokir dari perintah device tanpa target.
-- Merge PR rilis (`<protected>` → `<primary>`): hanya manusia. Agen hanya merge PR tiket (ke `<protected>`), setelah audit dan "ya" dari user.
-- Pindah tiket ke Todo tanpa izin user; upload ke live/prod tanpa izin eksplisit.
 - Mode audit: semua penulisan ke repo, git remote, dan Jira.
+
+**Dijaga aturan skill (bukan guard):**
+- Merge PR rilis (`<protected>` → `<primary>`): hanya manusia. Agen hanya merge PR tiket (ke `<protected>`), setelah audit dan "ya" dari user.
+- Pindah tiket ke Todo tanpa izin user.
+- Upload build produksi (Play production/`.aab` ke store, TestFlight untuk rilis App Store) hanya dengan izin eksplisit user per upload.
 
 **Agen selalu berhenti dan bertanya** bila: upload ke prod, akan merge PR tiket (setelah audit), hotfix (sementara manual: tanya dulu), nomor build tidak jelas, kredensial tidak ditemukan, dua fix hotfix bentrok, atau `build:heavy` / device sedang dipakai tiket Jira lain atau kamu sendiri untuk UAT (kamu memilih: tunggu, atau dahulukan/ambil alih untuk tugas ini).
 

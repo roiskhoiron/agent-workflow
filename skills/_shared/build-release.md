@@ -76,7 +76,7 @@ flowchart LR
 - Build live dari `<sha-rilis>` (head `<protected>` saat tracing, dicatat di laporan dan PR rilis; worktree sementara, kunci `build:heavy`): Android `.aab`, iOS TestFlight. Upload ke store produksi tetap izin eksplisit per upload. Catatan rilis menyebut server + base URL API live.
 - Setelah PR rilis merged oleh manusia: tag beranotasi `vX.Y.Z` di commit merge, push ke `upstream` dan `origin`. Tag tidak pernah ditimpa.
 - **Keluarkan tiket dari rilis**: PR revert ke `<protected>` dari branch `revert/<KODE>` di downstream, judul `revert: <KODE> keluar dari rilis vX.Y.Z`; merge PR revert hanya setelah user bilang "ya" (lalu aturan merge PR tiket). Tracing diulang setelah ter-merge. Agen mengomentari tiket itu: dikeluarkan dari vX.Y.Z + link PR revert.
-- Tiket itu Done lagi → buat PR **revert dari revert** dulu sebelum dihitung masuk rilis berikutnya.
+- Tiket itu Done lagi → buat PR **revert dari revert** (branch `unrevert/<KODE>`) dulu sebelum dihitung masuk rilis berikutnya. Lewati bila sudah ada PR merged dari `unrevert/<KODE>` yang lebih baru daripada PR merged `revert/<KODE>`.
 - Hotfix: sementara manual dengan bertanya (`--hotfix` belum ada). Dua fix bentrok → berhenti dan tanya.
 
 ## Jira setelah rilis

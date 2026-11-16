@@ -5,5 +5,5 @@
 
 # Jira agent workflow
 - Perintah: `/validate-tiket`, `/develop-tiket`, `/rilis-tiket`, `/audit-issue`. Aturan bersama: `~/.claude/skills/_agent-workflow-shared/rules.md`.
-- Workspace Orca: root project hanya untuk audit, tanya, dan `/rilis-tiket`; kerja kode di workspace domain yang dibuka user (id `$ORCA_WORKTREE_ID`). Multi-agent = panel split di workspace itu, bukan tab, workspace, atau project baru. Tiap tiket boleh worktree sendiri `<repo>-<nomor>` sejajar checkout domain; agen menghapusnya setelah Ready To Review bila bersih dan sudah di-push. Tidak aman dibagi → solo.
+- Workspace Orca: root project hanya untuk audit, tanya, `/rilis-tiket`, dan `/branch-manager`; kerja kode di workspace domain yang dibuka user (id `$ORCA_WORKTREE_ID`). Multi-agent = panel split di workspace itu, bukan tab, workspace, atau project baru. Tiap tiket boleh worktree sendiri `<repo>-<nomor>` sejajar checkout domain; agen menghapusnya setelah Ready To Review bila bersih dan sudah di-push. Tidak aman dibagi → solo.
 - Keputusan per project tidak ditulis agen ke CLAUDE.md project: agen memberi blok `## Catatan agen` untuk di-commit user.

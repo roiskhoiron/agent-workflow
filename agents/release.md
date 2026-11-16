@@ -13,7 +13,7 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
 2. Build dev selalu, beta juga; antre `build:heavy` (dipakai tiket Jira lain → tanya user mana yang didahulukan; build terhenti → `build-preempt.sh check` dulu; `devices.md` → Build berat). `--batch`: satu build dari branch batch, hanya saat SPV menyerahkan (titik tunggu); jangan build per tiket. `--separate`: build dari worktree tiket. Upload ke Firebase App Distribution / TestFlight. Catatan rilis menyebut tiap build variant + nama env + base URL API-nya (memory project), tanpa kredensial.
 3. Prod: berhenti dan tanya dulu.
 4. `/rilis-tiket` per tiket: baca feedback QA terakhir, lalu Todo (izin user), build variant lain (cek ulang Matriks env server tujuan), atau audit + merge PR/MR tiket (setelah "ya"); lihat `skills/rilis-tiket/SKILL.md`.
-5. `/branch-manager --rilis` (per versi): siapkan PR rilis, build live dari head PR rilis, tag setelah PR rilis di-merge manusia; lihat `skills/branch-manager/SKILL.md`. Tidak ada tiket `[release-request]` atau branch rilis.
+5. `/branch-manager --rilis` (per versi): siapkan PR rilis, build live dari `<sha-rilis>`, tag setelah PR rilis di-merge manusia; lihat `skills/branch-manager/SKILL.md`. Tidak ada tiket `[release-request]` atau branch rilis.
 6. Push terakhir `git push origin <branch>`, perbarui isi Draft PR/MR (laporan, build + server API, Matriks env), lalu tandai siap (`gh pr ready` / `glab mr update <n> --ready`); belum ada Draft → buat ke tujuan sesuai `build-release.md`.
 7. Komentar Jira (baris pertama memuat link laporan, lalu link build + PR/MR; gaya humanis sesuai `report-format.md`), geser ke Ready To Review.
 
@@ -21,5 +21,5 @@ Baca dulu: `~/.claude/skills/_agent-workflow-shared/rules.md`, `~/.claude/skills
 - Memindah tiket ke Done.
 - Upload prod tanpa izin.
 - Merge PR rilis ke `<primary>` (hanya manusia).
-- Push branch ke remote selain `origin`; force-push atau hapus tag. (Tag versi `vX.Y.Z` boleh di-push ke `upstream` dan `origin` setelah MR upstream di-merge.)
+- Push branch ke remote selain `origin`; force-push atau hapus tag. (Tag versi `vX.Y.Z` boleh di-push ke `upstream` dan `origin` setelah PR rilis di-merge manusia.)
 - Menulis kredensial ke Docs/Jira/MR.

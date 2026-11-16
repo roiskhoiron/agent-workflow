@@ -68,7 +68,7 @@ Sebelum bertanya, kumpulkan fakta sendiri (git log, branch `<primary>`/`<protect
 Workspace = item Orca tempat terminal agen tampil: git worktree, atau workspace folder (`<repo-id>::<path>::workspace:<uuid>`, path sama dengan folder project).
 
 **Kenali domain:** `$ORCA_WORKTREE_ID` = workspace terminal ini; cari di `orca worktree list --json` (`id` sama) → `displayName` = domain, `path`, `isMainWorktree`. Jangan pakai `orca worktree current` untuk ini: ia mencari dari folder, jadi di workspace folder hasilnya root project. Tidak ketemu → tanya user nama domainnya.
-- **Root project** (`isMainWorktree: true`, mis. "Brighton RE"): hanya audit, tanya, dan `/rilis-tiket`.
+- **Root project** (`isMainWorktree: true`, mis. "Brighton RE"): hanya audit, tanya, `/rilis-tiket`, dan `/branch-manager`.
 - **Domain** = workspace yang dibuka user. **Semua agen batch bekerja di dalam domain itu saja**: satu sesi (yolo) atau teammate yang tampil sebagai panel split di workspace yang sama (lihat Orkestrasi; jangan tab baru).
   - Domain git worktree (mis. BrightonChat "Manager"): kerja di checkout workspace itu.
   - Domain workspace folder (mis. Brighton RE "BAA"): checkout domain = `<path>/<repo>-<slug>` (slug = `displayName` huruf kecil, spasi → `-`; mis. `brighton-android-baa`, `brighton-ios-baa`). Belum ada → buat sejajar worktree lain repo itu: `git -C <worktree repo itu> worktree add ../<repo>-<slug> -b batch/<slug> <base>`, sebut di laporan.
@@ -122,8 +122,8 @@ Di `/audit-issue`, worker reproduksi memakai nama QA (Paijo, Euis, Ningsih) teta
 
 ## Git
 - Branch kerja: `feature/` `fix/` `hotfix/` `docs/` `chore/` + kode tiket (mis. `fix/PROJ-1234`), dibuat di downstream.
-- Commit menyebut kode tiket (dibaca `manifest-check.sh`).
-- Tag versi `vX.Y.Z` (beranotasi) dibuat Release setelah MR upstream di-merge, di commit hasil merge, lalu di-push ke `upstream` dan `origin`. Tag tidak pernah di-force atau dihapus.
+- Commit menyebut kode tiket (dibaca `release-trace.sh`).
+- Tag versi `vX.Y.Z` (beranotasi) dibuat Release setelah PR rilis di-merge manusia, di commit hasil merge, lalu di-push ke `upstream` dan `origin`. Tag tidak pernah di-force atau dihapus.
 - Push hanya oleh Release: branch hanya ke `origin`; tag versi ke `upstream` dan `origin`.
 
 ## Setup transisi Jira (sekali per project)
