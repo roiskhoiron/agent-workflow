@@ -188,7 +188,7 @@ check_worktree() {
   p=$("$PY" -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$(join_path "$(expand_home "$p")" "$d")")
   top=$("$PY" -c 'import os,sys; print(os.path.dirname(os.path.realpath(sys.argv[1])))' "$top")
   [ "${p%/*}" = "$top" ] || block "git worktree $op hanya untuk folder sejajar checkout ini ($top/<repo>-<nomor tiket>), tulis path apa adanya tanpa variabel: $p (rules.md, Workspace & worktree)."
-  [ "$op" = remove ] && ! [[ ${p##*/} =~ -[0-9]+$ ]] && block "git worktree remove hanya untuk worktree tiket <repo>-<nomor tiket>: ${p##*/} bukan worktree tiket (worktree domain/milik user tidak dihapus agen)."
+  [ "$op" = remove ] && ! [[ ${p##*/} =~ -[0-9]+$|-rilis-v[0-9][0-9.]*$ ]] && block "git worktree remove hanya untuk worktree tiket <repo>-<nomor tiket> atau worktree rilis sementara <repo>-rilis-vX.Y.Z: ${p##*/} bukan worktree agen (worktree domain/milik user tidak dihapus agen)."
   return 0
 }
 

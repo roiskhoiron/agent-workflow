@@ -7,7 +7,7 @@ Setiap tiket bergerak dari kiri ke kanan. Satu kolom = satu status tiket.
 | --- | --- | --- | --- | --- |
 | **Artinya** | Tiket baru, belum dicek | Layak dan sedang dikerjakan | Kode + uji selesai, menunggu review manusia | Diterima dan selesai |
 | **Perintah di kolom ini** | `/validate-tiket` | `/develop-tiket` | `/rilis-tiket` (feedback QA) | `/rilis-tiket` (merge PR tiket), `/branch-manager --rilis` (rilis versi) |
-| **Pindah oleh** | — | agen (Validator), bila **Layak** | agen (Release), bila semua TC Lulus/Tertahan beralasan | **manusia saja** |
+| **Pindah oleh** | manusia; atau agen (`/rilis-tiket`, izin user per tiket) bila ditolak QA | agen (Validator), bila **Layak** | agen (Release), bila semua TC Lulus/Tertahan beralasan | **manusia saja** |
 | **Bukti yang ditinggalkan** | — | laporan validasi + komentar Jira | rencana, laporan uji, build dev, PR/MR, komentar Jira | — |
 
 ```mermaid
